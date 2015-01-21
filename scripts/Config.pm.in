@@ -284,16 +284,19 @@ $TMSPF = 1; # training modulation spectrum-based postfilter
 $MKUN1 = 1; # making unseen models (1mix)
 $PGEN1 = 1; # generating speech parameter sequences (1mix)
 $WGEN1 = 1; # synthesizing waveforms (1mix)
+$LTST1 = 1; # computing test set log probability (1mix)
 $CONVM = 1; # converting mmfs to the hts_engine file format
 $ENGIN = 1; # synthesizing waveforms using hts_engine
 $SEMIT = 1; # semi-tied covariance matrices
 $MKUNS = 1; # making unseen models (stc)
 $PGENS = 1; # generating speech parameter sequences (stc)
 $WGENS = 1; # synthesizing waveforms (stc)
+$LTSTS = 1; # computing test set log probability (stc)
 $UPMIX = 1; # increasing the number of mixture components (1mix -> 2mix)
 $ERST5 = 1; # embedded reestimation (2mix)
 $MKUN2 = 1; # making unseen models (2mix)
 $PGEN2 = 1; # generating speech parameter sequences (2mix)
 $WGEN2 = 1; # synthesizing waveforms (2mix)
+$LTST2 = 1; # computing test set log probability (2mix)
 
 1;

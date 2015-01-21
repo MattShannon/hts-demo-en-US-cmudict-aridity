@@ -32,7 +32,12 @@ Modifications from the official version
 ---------------------------------------
 
 This repository contains modifications from the official version of the
-US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
+US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_.
+Some majorish differences include:
+
+- it computes test set log probability on a specified test corpus
+
+Some minor differences include:
 
 - it does not include a corpus of text data and speech data for training the
   synthesis system.
@@ -46,7 +51,6 @@ US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
 - it removes the ``configure`` script since a suitable script can be automatically
   generated from the provided ``configure.ac`` file using ``autoconf``.
   This follows standard version control practices.
-- various minor fixes and changes
 - when USEUTT is 0, generated utterance files are stored in ``data/utts`` rather
   than being discarded
 - it uses an explicitly specified list of training corpus and generation corpus
@@ -55,6 +59,7 @@ US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
 - for the generation corpus, it generates from text or utterances files rather
   than from pre-specified label files
 - a bit more information is written to the log file during clustering, etc
+- various minor fixes and changes
 
 License
 -------

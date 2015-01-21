@@ -73,6 +73,7 @@ $datdir = "$prjdir/data";
 
 # data location file
 $scp{'trn'} = "$datdir/scp/train.scp";
+$scp{'tst'} = "$datdir/scp/test.scp";
 $scp{'gen'} = "$datdir/scp/gen.scp";
 
 # model list files
@@ -86,6 +87,7 @@ $mlf{'ful'} = "$datdir/labels/full.mlf";
 
 # configuration variable files
 $cfg{'trn'} = "$prjdir/configs/qst${qnum}/ver${ver}/trn.cnf";
+$cfg{'tst'} = "$prjdir/configs/qst${qnum}/ver${ver}/tst.cnf";
 $cfg{'nvf'} = "$prjdir/configs/qst${qnum}/ver${ver}/nvf.cnf";
 $cfg{'syn'} = "$prjdir/configs/qst${qnum}/ver${ver}/syn.cnf";
 $cfg{'apg'} = "$prjdir/configs/qst${qnum}/ver${ver}/apg.cnf";
@@ -234,6 +236,7 @@ $HInit         = "$HINIT     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}        
 $HRest         = "$HREST     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}                -m 1 -u tmvw    -w $wf ";
 $HERest{'mon'} = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -m 1 -u tmvwdmv -w $wf -t $beam ";
 $HERest{'ful'} = "$HEREST    -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'ful'} -m 1 -u tmvwdmv -w $wf -t $beam ";
+$HERest{'tst'} = "$HEREST    -A -B -C $cfg{'tst'} -D -T 1 -S $scp{'tst'} -I $mlf{'ful'} -m 0 -u d ";
 $HERest{'gv'}  = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
 $HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -T 3 -p -i ";
 $HSMMAlign     = "$HSMMALIGN -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -t $beam -w 1.0 ";
@@ -718,6 +721,20 @@ if ($WGEN1) {
    gen_wave("$dir");
 }
 
+# HERest (computing test set log probability (1mix))
+if ($LTST1) {
+   print_time("computing test set log probability (1mix)");
+
+   $mix = '1mix';
+
+   if (-s $scp{'tst'}) {
+      shell("$HERest{'tst'} -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
+   }
+   else {
+      print("(skipping since test set is empty)\n\n");
+   }
+}
+
 $useMSPF = 0;    # turn off modulation spectrum-based postfilter for following step
 
 # HHEd (converting mmfs to the HTS voice format)
@@ -844,6 +861,18 @@ if ($WGENS) {
    gen_wave("$dir");
 }
 
+# HERest (computing test set log probability (stc))
+if ($LTSTS) {
+   print_time("computing test set log probability (stc)");
+
+   if (-s $scp{'tst'}) {
+      shell("$HERest{'tst'} -H $stcammf{'cmp'} -N $stcammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
+   }
+   else {
+      print("(skipping since test set is empty)\n\n");
+   }
+}
+
 # HHED (increasing the number of mixture components (1mix -> 2mix))
 if ($UPMIX) {
    print_time("increasing the number of mixture components (1mix -> 2mix)");
@@ -908,6 +937,18 @@ if ($WGEN2) {
    $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
 
    gen_wave("$dir");
+}
+
+# HERest (computing test set log probability (2mix))
+if ($LTST2) {
+   print_time("computing test set log probability (2mix)");
+
+   if (-s $scp{'tst'}) {
+      shell("$HERest{'tst'} -H $rclammf{'cmp'} -N $rclammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
+   }
+   else {
+      print("(skipping since test set is empty)\n\n");
+   }
 }
 
 # sub routines ============================
@@ -1447,6 +1488,14 @@ sub make_config {
    print CONF "\"\n";
    printf CONF "DURVARFLOORPERCENTILE = %f\n", 100 * $vflr{'dur'};
    print CONF "APPLYDURVARFLOOR = T\n";
+   print CONF "MAXSTDDEVCOEF = $maxdev\n";
+   print CONF "MINDUR = $mindur\n";
+   close(CONF);
+
+   # config file for test corpus
+   open( CONF, ">$cfg{'tst'}" ) || die "Cannot open $!";
+   print CONF "NATURALREADORDER = T\n";
+   print CONF "NATURALWRITEORDER = T\n";
    print CONF "MAXSTDDEVCOEF = $maxdev\n";
    print CONF "MINDUR = $mindur\n";
    close(CONF);

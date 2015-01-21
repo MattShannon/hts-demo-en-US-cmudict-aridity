@@ -62,7 +62,7 @@ NMGCWIN = @NMGCWIN@
 NLF0WIN = @NLF0WIN@
 NBAPWIN = @NBAPWIN@
 
-all: corpus-train.lst corpus-gen.lst analysis labels
+all: corpus-train.lst corpus-test.lst corpus-gen.lst analysis labels
 
 analysis: features cmp
 
@@ -72,7 +72,7 @@ features:
 	# Extracting features from raw audio
 	mkdir -p mgc lf0 bap
 	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
-	cat corpus-train.lst | while read uttId; do \
+	cat corpus-train.lst corpus-test.lst | while read uttId; do \
 		min=`$(X2X) +sf raw/$${uttId}.raw | $(MINMAX) | $(X2X) +fa | head -n 1`; \
 		max=`$(X2X) +sf raw/$${uttId}.raw | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
 		if [ -s raw/$${uttId}.raw -a $${min} -gt -32768 -a $${max} -lt 32767 ]; then \
@@ -162,7 +162,7 @@ features:
 cmp:
 	# Composing training data files from extracted features
 	mkdir -p cmp
-	cat corpus-train.lst | while read uttId; do \
+	cat corpus-train.lst corpus-test.lst | while read uttId; do \
 		echo "Composing training data for $${uttId}"; \
 		if [ $(USESTRAIGHT) -eq 0 ]; then \
 			MGCDIM=`expr $(MGCORDER) + 1`; \
@@ -233,7 +233,7 @@ lab:
 	mkdir -p labels/mono
 	mkdir -p labels/full
 	if [ $(USEUTT) -eq 1 ]; then \
-		cat corpus-train.lst corpus-gen.lst | while read uttId; do \
+		cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
 			if [ -s utts/$${uttId}.utt ]; then \
 				echo "Extracting labels from utts/$${uttId}.utt"; \
 				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats utts/$${uttId}.utt; \
@@ -246,7 +246,7 @@ lab:
 		done; \
 	else \
 		mkdir -p utts; \
-		cat corpus-train.lst corpus-gen.lst | while read uttId; do \
+		cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
 			if [ -s txt/$${uttId}.txt ]; then \
 				echo "Extracting labels from txt/$${uttId}.txt"; \
 				$(PERL) scripts/normtext.pl txt/$${uttId}.txt > tmp.txt; \
@@ -286,7 +286,7 @@ list:
 	# Generating a fullcontext model list file which includes unseen models
 	rm -f tmp
 	cat lists/full.list > tmp
-	cat corpus-train.lst corpus-gen.lst | while read uttId; do \
+	cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
 		sed -e "s/.* //g" labels/full/$${uttId}.lab >> tmp; \
 	done
 	sort -u tmp > lists/full_all.list
@@ -310,6 +310,14 @@ scp:
 	cat corpus-train.lst | while read uttId; do \
 		if [ -s cmp/$${uttId}.cmp -a -s labels/mono/$${uttId}.lab -a -s labels/full/$${uttId}.lab ]; then \
 			echo "`pwd -P`"/cmp/$${uttId}.cmp >> scp/train.scp; \
+		fi \
+	done
+
+	# Generating a test corpus data script
+	rm -f scp/test.scp
+	cat corpus-test.lst | while read uttId; do \
+		if [ -s cmp/$${uttId}.cmp -a -s labels/full/$${uttId}.lab ]; then \
+			echo "`pwd -P`"/cmp/$${uttId}.cmp >> scp/test.scp; \
 		fi \
 	done
 
