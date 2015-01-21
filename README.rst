@@ -46,6 +46,12 @@ US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
 - it removes the ``configure`` script since a suitable script can be automatically
   generated from the provided ``configure.ac`` file using ``autoconf``.
   This follows standard version control practices.
+- various minor fixes
+- it uses an explicitly specified list of training corpus and generation corpus
+  utterance ids rather than trying to autodetect what files are present in a
+  given directory
+- for the generation corpus, it generates from text or utterances files rather
+  than from pre-specified label files
 
 License
 -------
