@@ -1558,6 +1558,8 @@ sub make_config {
    print CONF "NATURALREADORDER = T\n";
    print CONF "NATURALWRITEORDER = T\n";
    print CONF "USEALIGN = T\n";
+   # prevent very verbose output during GV generation
+   print CONF "HGEN:TRACE = 0\n";
 
    print CONF "PDFSTRSIZE = \"IntVec $nPdfStreams{'cmp'}";    # PdfStream structure
    foreach $type (@cmp) {
