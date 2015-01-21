@@ -46,7 +46,7 @@ US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
 - it removes the ``configure`` script since a suitable script can be automatically
   generated from the provided ``configure.ac`` file using ``autoconf``.
   This follows standard version control practices.
-- various minor fixes
+- various minor fixes and changes
 - when USEUTT is 0, generated utterance files are stored in ``data/utts`` rather
   than being discarded
 - it uses an explicitly specified list of training corpus and generation corpus

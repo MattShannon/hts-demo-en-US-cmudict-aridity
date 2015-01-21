@@ -926,15 +926,18 @@ sub print_time ($) {
    my ($message) = @_;
    my ($ruler);
 
-   $message .= `date`;
+   chomp($hostname = `hostname`);
+   chomp($date = `date`);
+
+   $message = "Start $message on $hostname at $date";
 
    $ruler = '';
-   for ( $i = 0 ; $i <= length($message) + 10 ; $i++ ) {
+   for ( $i = 0 ; $i < length($message) + 2 ; $i++ ) {
       $ruler .= '=';
    }
 
    print "\n$ruler\n";
-   print "Start @_ at " . `date`;
+   print "$message\n";
    print "$ruler\n\n";
 }
 
