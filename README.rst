@@ -54,6 +54,7 @@ US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
   given directory
 - for the generation corpus, it generates from text or utterances files rather
   than from pre-specified label files
+- a bit more information is written to the log file during clustering, etc
 
 License
 -------
