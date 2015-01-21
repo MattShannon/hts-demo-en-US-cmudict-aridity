@@ -737,7 +737,7 @@ AC_ARG_VAR([GVWEIGHT],[weight for GV output prob. (default=1.0)])
 AC_ARG_VAR([OPTKIND],[optimization method (STEEPEST, NEWTON, or LBFGS) (default=NEWTON)])
 AC_ARG_VAR([NOSILGV],[turn on GV without silent and pause phoneme (0:off or 1:on, default=1)])
 AC_ARG_VAR([CDGV],[turn on context-dependent GV (0:off or 1:on, default=1)])
-AC_ARG_VAR([USEMSPF],[turn on modulation spectrum-based postfilter (0:off or 1:on, default=1)])
+AC_ARG_VAR([USEMSPF],[turn on modulation spectrum-based postfilter (0:off or 1:on, default=0)])
 
 # default values
 if test -z "$PGTYPE"; then
@@ -801,7 +801,7 @@ if test -z "$CDGV"; then
 fi
 
 if test -z "$USEMSPF"; then
-	USEMSPF=1
+	USEMSPF=0
 fi
 
 # substitute variables
