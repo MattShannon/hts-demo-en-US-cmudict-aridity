@@ -47,6 +47,8 @@ US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
   generated from the provided ``configure.ac`` file using ``autoconf``.
   This follows standard version control practices.
 - various minor fixes
+- when USEUTT is 0, generated utterance files are stored in ``data/utts`` rather
+  than being discarded
 - it uses an explicitly specified list of training corpus and generation corpus
   utterance ids rather than trying to autodetect what files are present in a
   given directory
