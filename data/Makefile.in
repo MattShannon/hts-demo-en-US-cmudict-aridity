@@ -62,7 +62,7 @@ NMGCWIN = @NMGCWIN@
 NLF0WIN = @NLF0WIN@
 NBAPWIN = @NBAPWIN@
 
-all: analysis labels
+all: corpus-train.lst corpus-gen.lst analysis labels
 
 analysis: features cmp
 
@@ -72,90 +72,89 @@ features:
 	# Extracting features from raw audio
 	mkdir -p mgc lf0 bap
 	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
-	for raw in raw/$(DATASET)_$(SPEAKER)_*.raw; do \
-		base=`basename $${raw} .raw`; \
-		min=`$(X2X) +sf $${raw} | $(MINMAX) | $(X2X) +fa | head -n 1`; \
-		max=`$(X2X) +sf $${raw} | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
-		if [ -s $${raw} -a $${min} -gt -32768 -a $${max} -lt 32767 ]; then \
-			echo "Extracting features from $${raw}"; \
+	cat corpus-train.lst | while read uttId; do \
+		min=`$(X2X) +sf raw/$${uttId}.raw | $(MINMAX) | $(X2X) +fa | head -n 1`; \
+		max=`$(X2X) +sf raw/$${uttId}.raw | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
+		if [ -s raw/$${uttId}.raw -a $${min} -gt -32768 -a $${max} -lt 32767 ]; then \
+			echo "Extracting features from raw/$${uttId}.raw"; \
 			if [ $(USESTRAIGHT) -eq 0 ]; then \
-				$(X2X) +sf $${raw} | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > lf0/$${base}.lf0; \
+				$(X2X) +sf raw/$${uttId}.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > lf0/$${uttId}.lf0; \
 				if [ $(GAMMA) -eq 0 ]; then \
-					$(X2X) +sf $${raw} | \
+					$(X2X) +sf raw/$${uttId}.raw | \
 					$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
 					$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
-					$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 > mgc/$${base}.mgc; \
+					$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 > mgc/$${uttId}.mgc; \
 				else \
 					if [ $(LNGAIN) -eq 1 ]; then \
 						GAINOPT="-L"; \
 					fi; \
-					$(X2X) +sf $${raw} | \
+					$(X2X) +sf raw/$${uttId}.raw | \
 					$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
 					$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
 					$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 -o 4 | \
-					$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n $(FFTLEN) -p 8 -d 1.0E-08 > mgc/$${base}.mgc; \
+					$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n $(FFTLEN) -p 8 -d 1.0E-08 > mgc/$${uttId}.mgc; \
 				fi; \
-				if [ -n "`$(NAN) lf0/$${base}.lf0`" ]; then \
-					echo " Failed to extract features from $${raw}"; \
-					rm -f lf0/$${base}.lf0; \
+				if [ -n "`$(NAN) lf0/$${uttId}.lf0`" ]; then \
+					echo " Failed to extract features from raw/$${uttId}.raw"; \
+					rm -f lf0/$${uttId}.lf0; \
 				fi; \
-				if [ -n "`$(NAN) mgc/$${base}.mgc`" ]; then \
-					echo " Failed to extract features from $${raw}"; \
-					rm -f mgc/$${base}.mgc; \
+				if [ -n "`$(NAN) mgc/$${uttId}.mgc`" ]; then \
+					echo " Failed to extract features from raw/$${uttId}.raw"; \
+					rm -f mgc/$${uttId}.mgc; \
 				fi; \
 			else \
 				FRAMESHIFTMS=`echo $(FRAMESHIFT) | $(X2X) +af | $(SOPR) -m 1000 -d $(SAMPFREQ) | $(X2X) +fa`; \
-				NONORMRATE=`$(X2X) +sf $${raw} | $(VSTAT) -d -o 2 | $(SOPR) -SQRT -INV -m $(STRMAGIC) | $(X2X) +fa`; \
-				$(RAW2WAV) -s $${SAMPKHZ} -d . $${raw}; \
-				echo "path(path,'$(STRAIGHT)');"                    >  $${base}.m; \
-				echo "prm.F0frameUpdateInterval=$${FRAMESHIFTMS};"  >> $${base}.m; \
-				echo "prm.F0searchUpperBound=$(UPPERF0);"           >> $${base}.m; \
-				echo "prm.F0searchLowerBound=$(LOWERF0);"           >> $${base}.m; \
-				echo "prm.spectralUpdateInterval=$${FRAMESHIFTMS};" >> $${base}.m; \
-				echo "[x,fs]=wavread('$${base}.wav');"              >> $${base}.m; \
-				echo "[f0,ap] = exstraightsource(x,fs,prm);"        >> $${base}.m; \
-				echo "[sp] = exstraightspec(x,f0,fs,prm);"          >> $${base}.m; \
-				echo "ap = ap';"                                    >> $${base}.m; \
-				echo "sp = sp';"                                    >> $${base}.m; \
-				echo "sp = sp*$${NONORMRATE};"                      >> $${base}.m; \
-				echo "save '$${base}.f0' f0 -ascii;"                >> $${base}.m; \
-				echo "save '$${base}.ap' ap -ascii;"                >> $${base}.m; \
-				echo "save '$${base}.sp' sp -ascii;"                >> $${base}.m; \
-				echo "quit;"                                        >> $${base}.m; \
-				$(MATLAB) < $${base}.m; \
-				if [ -s $${base}.f0 ]; then \
-					$(X2X) +af $${base}.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > lf0/$${base}.lf0; \
-					if [ -n "`$(NAN) lf0/$${base}.lf0`" ]; then \
-						echo " Failed to extract features from $${raw}"; \
-						rm -f lf0/$${base}.lf0; \
+				NONORMRATE=`$(X2X) +sf raw/$${uttId}.raw | $(VSTAT) -d -o 2 | $(SOPR) -SQRT -INV -m $(STRMAGIC) | $(X2X) +fa`; \
+				$(RAW2WAV) -s $${SAMPKHZ} -d . raw/$${uttId}.raw; \
+				echo "path(path,'$(STRAIGHT)');"                    >  $${uttId}.m; \
+				echo "prm.F0frameUpdateInterval=$${FRAMESHIFTMS};"  >> $${uttId}.m; \
+				echo "prm.F0searchUpperBound=$(UPPERF0);"           >> $${uttId}.m; \
+				echo "prm.F0searchLowerBound=$(LOWERF0);"           >> $${uttId}.m; \
+				echo "prm.spectralUpdateInterval=$${FRAMESHIFTMS};" >> $${uttId}.m; \
+				echo "[x,fs]=wavread('$${uttId}.wav');"             >> $${uttId}.m; \
+				echo "[f0,ap] = exstraightsource(x,fs,prm);"        >> $${uttId}.m; \
+				echo "[sp] = exstraightspec(x,f0,fs,prm);"          >> $${uttId}.m; \
+				echo "ap = ap';"                                    >> $${uttId}.m; \
+				echo "sp = sp';"                                    >> $${uttId}.m; \
+				echo "sp = sp*$${NONORMRATE};"                      >> $${uttId}.m; \
+				echo "save '$${uttId}.f0' f0 -ascii;"               >> $${uttId}.m; \
+				echo "save '$${uttId}.ap' ap -ascii;"               >> $${uttId}.m; \
+				echo "save '$${uttId}.sp' sp -ascii;"               >> $${uttId}.m; \
+				echo "quit;"                                        >> $${uttId}.m; \
+				$(MATLAB) < $${uttId}.m; \
+				if [ -s $${uttId}.f0 ]; then \
+					$(X2X) +af $${uttId}.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > lf0/$${uttId}.lf0; \
+					if [ -n "`$(NAN) lf0/$${uttId}.lf0`" ]; then \
+						echo " Failed to extract features from raw/$${uttId}.raw"; \
+						rm -f lf0/$${uttId}.lf0; \
 					fi; \
 				fi; \
-				if [ -s $${base}.sp ]; then \
+				if [ -s $${uttId}.sp ]; then \
 					if [ $(GAMMA) -eq 0 ]; then \
-						$(X2X) +af $${base}.sp | \
-						$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > mgc/$${base}.mgc; \
+						$(X2X) +af $${uttId}.sp | \
+						$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > mgc/$${uttId}.mgc; \
 					else \
 						if [ $(LNGAIN) -eq 1 ]; then \
 							GAINOPT="-L"; \
 						fi; \
-						$(X2X) +af $${base}.sp | \
+						$(X2X) +af $${uttId}.sp | \
 						$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 -o 4 | \
-						$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 2048 -p 8 -d 1.0E-08 > mgc/$${base}.mgc; \
+						$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 2048 -p 8 -d 1.0E-08 > mgc/$${uttId}.mgc; \
 					fi; \
-					if [ -n "`$(NAN) mgc/$${base}.mgc`" ]; then \
-						echo " Failed to extract features from $${raw}"; \
-						rm -f mgc/$${base}.mgc; \
-					fi; \
-				fi; \
-				if [ -s $${base}.ap ]; then \
-					$(X2X) +af $${base}.ap | \
-					$(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > bap/$${base}.bap; \
-					if [ -n "`$(NAN) bap/$${base}.bap`" ]; then \
-						echo " Failed to extract features from $${raw}"; \
-						rm -f bap/$${base}.bap; \
+					if [ -n "`$(NAN) mgc/$${uttId}.mgc`" ]; then \
+						echo " Failed to extract features from raw/$${uttId}.raw"; \
+						rm -f mgc/$${uttId}.mgc; \
 					fi; \
 				fi; \
-				rm -f $${base}.m $${base}.wav $${base}.f0 $${base}.ap $${base}.sp; \
+				if [ -s $${uttId}.ap ]; then \
+					$(X2X) +af $${uttId}.ap | \
+					$(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > bap/$${uttId}.bap; \
+					if [ -n "`$(NAN) bap/$${uttId}.bap`" ]; then \
+						echo " Failed to extract features from raw/$${uttId}.raw"; \
+						rm -f bap/$${uttId}.bap; \
+					fi; \
+				fi; \
+				rm -f $${uttId}.m $${uttId}.wav $${uttId}.f0 $${uttId}.ap $${uttId}.sp; \
 			fi; \
 		fi; \
 	done
@@ -163,32 +162,31 @@ features:
 cmp:
 	# Composing training data files from extracted features
 	mkdir -p cmp
-	for raw in raw/$(DATASET)_$(SPEAKER)_*.raw; do \
-		base=`basename $${raw} .raw`; \
-		echo "Composing training data for $${base}"; \
+	cat corpus-train.lst | while read uttId; do \
+		echo "Composing training data for $${uttId}"; \
 		if [ $(USESTRAIGHT) -eq 0 ]; then \
 			MGCDIM=`expr $(MGCORDER) + 1`; \
 			LF0DIM=1; \
 			MGCWINDIM=`expr $(NMGCWIN) \* $${MGCDIM}`; \
 			LF0WINDIM=`expr $(NLF0WIN) \* $${LF0DIM}`; \
 			BYTEPERFRAME=`expr 4 \* \( $${MGCWINDIM} + $${LF0WINDIM} \)`; \
-			if [ -s mgc/$${base}.mgc -a -s lf0/$${base}.lf0 ]; then \
+			if [ -s mgc/$${uttId}.mgc -a -s lf0/$${uttId}.lf0 ]; then \
 				MGCWINS=""; \
 				i=1; \
 				while [ $${i} -le $(NMGCWIN) ]; do \
 					eval MGCWINS=\"$${MGCWINS} $(MGCWIN)$${i}\"; \
 					i=`expr $${i} + 1`; \
 				done; \
-				$(PERL) scripts/window.pl $${MGCDIM} mgc/$${base}.mgc $${MGCWINS} > tmp.mgc; \
+				$(PERL) scripts/window.pl $${MGCDIM} mgc/$${uttId}.mgc $${MGCWINS} > tmp.mgc; \
 				LF0WINS=""; \
 				i=1; \
 				while [ $${i} -le $(NLF0WIN) ]; do \
 					eval LF0WINS=\"$${LF0WINS} $(LF0WIN)$${i}\"; \
 					i=`expr $${i} + 1`; \
 				done; \
-				$(PERL) scripts/window.pl $${LF0DIM} lf0/$${base}.lf0 $${LF0WINS} > tmp.lf0; \
+				$(PERL) scripts/window.pl $${LF0DIM} lf0/$${uttId}.lf0 $${LF0WINS} > tmp.lf0; \
 				$(MERGE) +f -s 0 -l $${LF0WINDIM} -L $${MGCWINDIM} tmp.mgc < tmp.lf0                 > tmp.cmp; \
-				$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 tmp.cmp > cmp/$${base}.cmp; \
+				$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 tmp.cmp > cmp/$${uttId}.cmp; \
 				rm -f tmp.mgc tmp.lf0 tmp.cmp; \
 			fi; \
 		else \
@@ -200,31 +198,31 @@ cmp:
 			BAPWINDIM=`expr $(NBAPWIN) \* $${BAPDIM}`; \
 			MGCLF0WINDIM=`expr $${MGCWINDIM} + $${LF0WINDIM}`; \
 			BYTEPERFRAME=`expr 4 \* \( $${MGCWINDIM} + $${LF0WINDIM} + $${BAPWINDIM} \)`; \
-			if [ -s mgc/$${base}.mgc -a -s lf0/$${base}.lf0 -a -s bap/$${base}.bap ]; then \
+			if [ -s mgc/$${uttId}.mgc -a -s lf0/$${uttId}.lf0 -a -s bap/$${uttId}.bap ]; then \
 				MGCWINS=""; \
 				i=1; \
 				while [ $${i} -le $(NMGCWIN) ]; do \
 					eval MGCWINS=\"$${MGCWINS} $(MGCWIN)$${i}\"; \
 					i=`expr $${i} + 1`; \
 				done; \
-				$(PERL) scripts/window.pl $${MGCDIM} mgc/$${base}.mgc $${MGCWINS} > tmp.mgc; \
+				$(PERL) scripts/window.pl $${MGCDIM} mgc/$${uttId}.mgc $${MGCWINS} > tmp.mgc; \
 				LF0WINS=""; \
 				i=1; \
 				while [ $${i} -le $(NLF0WIN) ]; do \
 					eval LF0WINS=\"$${LF0WINS} $(LF0WIN)$${i}\"; \
 					i=`expr $${i} + 1`; \
 				done; \
-				$(PERL) scripts/window.pl $${LF0DIM} lf0/$${base}.lf0 $${LF0WINS} > tmp.lf0; \
+				$(PERL) scripts/window.pl $${LF0DIM} lf0/$${uttId}.lf0 $${LF0WINS} > tmp.lf0; \
 				BAPWINS=""; \
 				i=1; \
 				while [ $${i} -le $(NBAPWIN) ]; do \
 					eval BAPWINS=\"$${BAPWINS} $(BAPWIN)$${i}\"; \
 					i=`expr $${i} + 1`; \
 				done; \
-				$(PERL) scripts/window.pl $${BAPDIM} bap/$${base}.bap $${BAPWINS} > tmp.bap; \
+				$(PERL) scripts/window.pl $${BAPDIM} bap/$${uttId}.bap $${BAPWINS} > tmp.bap; \
 				$(MERGE) +f -s 0 -l $${LF0WINDIM} -L $${MGCWINDIM}    tmp.mgc     < tmp.lf0          > tmp.mgc+lf0; \
 				$(MERGE) +f -s 0 -l $${BAPWINDIM} -L $${MGCLF0WINDIM} tmp.mgc+lf0 < tmp.bap          > tmp.cmp; \
-				$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 tmp.cmp > cmp/$${base}.cmp; \
+				$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 tmp.cmp > cmp/$${uttId}.cmp; \
 				rm -f tmp.mgc tmp.lf0 tmp.bap tmp.mgc+lf0 tmp.cmp; \
 			fi; \
 		fi; \
@@ -235,31 +233,29 @@ lab:
 	mkdir -p labels/mono
 	mkdir -p labels/full
 	if [ $(USEUTT) -eq 1 ]; then \
-		for utt in utts/$(DATASET)_$(SPEAKER)_*.utt; do \
-			base=`basename $${utt} .utt`; \
-			if [ -s $${utt} ]; then \
-				echo "Extracting labels from $${utt}"; \
-				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats $${utt}; \
+		cat corpus-train.lst corpus-gen.lst | while read uttId; do \
+			if [ -s utts/$${uttId}.utt ]; then \
+				echo "Extracting labels from utts/$${uttId}.utt"; \
+				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats utts/$${uttId}.utt; \
 			fi; \
 			if [ -s tmp.feats ]; then \
-				$(AWK) -f scripts/label-full.awk tmp.feats > labels/full/$${base}.lab; \
-				$(AWK) -f scripts/label-mono.awk tmp.feats > labels/mono/$${base}.lab; \
+				$(AWK) -f scripts/label-full.awk tmp.feats > labels/full/$${uttId}.lab; \
+				$(AWK) -f scripts/label-mono.awk tmp.feats > labels/mono/$${uttId}.lab; \
 				rm -f tmp.feats; \
 			fi; \
 		done; \
 	else \
-		for txt in txt/$(DATASET)_$(SPEAKER)_*.txt; do \
-			base=`basename $${txt} .txt`; \
-			if [ -s $${txt} ]; then \
-				echo "Extracting labels from $${txt}"; \
-				$(PERL) scripts/normtext.pl $${txt} > tmp.txt; \
+		cat corpus-train.lst corpus-gen.lst | while read uttId; do \
+			if [ -s txt/$${uttId}.txt ]; then \
+				echo "Extracting labels from txt/$${uttId}.txt"; \
+				$(PERL) scripts/normtext.pl txt/$${uttId}.txt > tmp.txt; \
 				$(TEXT2UTT) tmp.txt > tmp.utt; \
 				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats tmp.utt; \
 				rm -f tmp.txt tmp.utt; \
 			fi; \
 			if [ -s tmp.feats ]; then \
-				$(AWK) -f scripts/label-full.awk tmp.feats > labels/full/$${base}.lab; \
-				$(AWK) -f scripts/label-mono.awk tmp.feats > labels/mono/$${base}.lab; \
+				$(AWK) -f scripts/label-full.awk tmp.feats > labels/full/$${uttId}.lab; \
+				$(AWK) -f scripts/label-mono.awk tmp.feats > labels/mono/$${uttId}.lab; \
 				rm -f tmp.feats; \
 			fi; \
 		done; \
@@ -278,9 +274,9 @@ list:
 	mkdir -p lists
 
 	rm -f tmp
-	for lab in labels/full/$(DATASET)_$(SPEAKER)_*.lab; do \
-		if [ -s $${lab} -a -s labels/mono/`basename $${lab}` -a -s cmp/`basename $${lab} .lab`.cmp ]; then \
-			sed -e "s/.* //g" $${lab} >> tmp; \
+	cat corpus-train.lst | while read uttId; do \
+		if [ -s labels/full/$${uttId}.lab -a -s labels/mono/$${uttId}.lab -a -s cmp/$${uttId}.cmp ]; then \
+			sed -e "s/.* //g" labels/full/$${uttId}.lab >> tmp; \
 		fi \
 	done
 	sort -u tmp > lists/full.list
@@ -289,17 +285,17 @@ list:
 	# Generating a fullcontext model list file which includes unseen models
 	rm -f tmp
 	cat lists/full.list > tmp
-	for lab in labels/gen/*.lab; do \
-		sed -e "s/.* //g" $${lab} >> tmp; \
+	cat corpus-train.lst corpus-gen.lst | while read uttId; do \
+		sed -e "s/.* //g" labels/full/$${uttId}.lab >> tmp; \
 	done
 	sort -u tmp > lists/full_all.list
 	rm -f tmp
 
 	# Generating a monophone list file
 	rm -f tmp
-	for lab in labels/mono/$(DATASET)_$(SPEAKER)_*.lab; do \
-		if [ -s $${lab} -a -s labels/full/`basename $${lab}` -a -s cmp/`basename $${lab} .lab`.cmp ]; then \
-			sed -e "s/.* //g" $${lab} >> tmp; \
+	cat corpus-train.lst | while read uttId; do \
+		if [ -s labels/mono/$${uttId}.lab -a -s labels/full/$${uttId}.lab -a -s cmp/$${uttId}.cmp ]; then \
+			sed -e "s/.* //g" labels/mono/$${uttId}.lab >> tmp; \
 		fi \
 	done
 	sort -u tmp > lists/mono.list
@@ -310,16 +306,16 @@ scp:
 	mkdir -p scp
 
 	rm -f scp/train.scp
-	for cmp in @PWD@/data/cmp/$(DATASET)_$(SPEAKER)_*.cmp; do \
-		if [ -s $${cmp} -a -s labels/mono/`basename $${cmp} .cmp`.lab -a -s labels/full/`basename $${cmp} .cmp`.lab ]; then \
-			echo $${cmp} >> scp/train.scp; \
+	cat corpus-train.lst | while read uttId; do \
+		if [ -s cmp/$${uttId}.cmp -a -s labels/mono/$${uttId}.lab -a -s labels/full/$${uttId}.lab ]; then \
+			echo "`pwd -P`"/cmp/$${uttId}.cmp >> scp/train.scp; \
 		fi \
 	done
 
 	# Generating a generation label script
 	rm -f scp/gen.scp
-	for lab in @PWD@/data/labels/gen/*.lab; do \
-		echo $${lab} >> scp/gen.scp; \
+	cat corpus-gen.lst | while read uttId; do \
+		echo "`pwd -P`"/labels/full/$${uttId}.lab >> scp/gen.scp; \
 	done
 
 
