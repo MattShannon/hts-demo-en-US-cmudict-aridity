@@ -58,7 +58,7 @@ Some minor differences include:
   given directory
 - for the generation corpus, it generates from text or utterances files rather
   than from pre-specified label files
-- a bit more information is written to the log file during clustering, etc
+- a bit more information is written to the log file during decision tree clustering
 - various minor fixes and changes
 
 License

@@ -238,7 +238,7 @@ $HERest{'mon'} = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf
 $HERest{'ful'} = "$HEREST    -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'ful'} -m 1 -u tmvwdmv -w $wf -t $beam ";
 $HERest{'tst'} = "$HEREST    -A -B -C $cfg{'tst'} -D -T 1 -S $scp{'tst'} -I $mlf{'ful'} -m 0 -u d ";
 $HERest{'gv'}  = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
-$HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -T 3 -p -i ";
+$HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -p -i ";
 $HSMMAlign     = "$HSMMALIGN -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -t $beam -w 1.0 ";
 $HMGenS        = "$HMGENS    -A -B -C $cfg{'syn'} -D -T 1                               -t $beam ";
 
@@ -394,7 +394,7 @@ if ($MMMMF) {
 
       close(EDFILE);
 
-      shell("$HHEd{'trn'} -d $hrest{$set} -w $monommf{$set} $lvf{$set} $lst{'mon'}");
+      shell("$HHEd{'trn'} -T 1 -d $hrest{$set} -w $monommf{$set} $lvf{$set} $lst{'mon'}");
       shell("gzip -c $monommf{$set} > $monommf{$set}.nonembedded.gz");
    }
 }
@@ -457,7 +457,7 @@ if ($MN2FL) {
       close(LIST);
       close(EDFILE);
 
-      shell("$HHEd{'trn'} -H $monommf{$set} -w $fullmmf{$set} $m2f{$set} $lst{'mon'}");
+      shell("$HHEd{'trn'} -T 1 -H $monommf{$set} -w $fullmmf{$set} $m2f{$set} $lst{'mon'}");
       shell("gzip -c $fullmmf{$set} > $fullmmf{$set}.nonembedded.gz");
    }
 }
@@ -493,7 +493,7 @@ if ($CXCL1) {
       foreach $type ( @{ $ref{$set} } ) {
          if ( $strw{$type} > 0.0 ) {
             make_edfile_state($type);
-            shell("$HHEd{'trn'} -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
+            shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
             $footer .= "_$type";
             shell("gzip -c $clusmmf{$set} > $clusmmf{$set}$footer.gz");
          }
@@ -522,7 +522,7 @@ if ($UNTIE) {
 
    foreach $set (@SET) {
       make_edfile_untie($set);
-      shell("$HHEd{'trn'} -H $clusmmf{$set} -w $untymmf{$set} $unt{$set} $lst{'ful'}");
+      shell("$HHEd{'trn'} -T 1 -H $clusmmf{$set} -w $untymmf{$set} $unt{$set} $lst{'ful'}");
    }
 }
 
@@ -559,7 +559,7 @@ if ($CXCL2) {
       $footer = "";
       foreach $type ( @{ $ref{$set} } ) {
          make_edfile_state($type);
-         shell("$HHEd{'trn'} -C $cfg{$type} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$type} $lst{'ful'}");
+         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$type} $lst{'ful'}");
 
          $footer .= "_$type";
          shell("gzip -c $reclmmf{$set} > $reclmmf{$set}$footer.gz");
@@ -627,7 +627,7 @@ if ($MCDGV) {
          shell("cp $fullmmf{'gv'} $clusmmf{'gv'}");
          foreach $type (@cmp) {
             make_edfile_state_gv( $type, $s );
-            shell("$HHEd{'trn'} -H $clusmmf{'gv'} $gvmdl{$type} -w $clusmmf{'gv'} $gvcxc{$type} $gvdir/gv.list");
+            shell("$HHEd{'trn'} -T 1 -H $clusmmf{'gv'} $gvmdl{$type} -w $clusmmf{'gv'} $gvcxc{$type} $gvdir/gv.list");
             $s++;
          }
 
@@ -647,7 +647,7 @@ if ($MKUNG) {
    if ($useGV) {
       if ($cdgv) {
          make_edfile_mkunseen_gv();
-         shell("$HHEd{'trn'} -H $clusmmf{'gv'} -w $clsammf{'gv'} $mku{'gv'} $gvdir/gv.list");
+         shell("$HHEd{'trn'} -T 1 -H $clusmmf{'gv'} -w $clsammf{'gv'} $mku{'gv'} $gvdir/gv.list");
       }
       else {
          copy_clus2clsa_gv();
@@ -694,7 +694,7 @@ if ($MKUN1) {
 
    foreach $set (@SET) {
       make_edfile_mkunseen($set);
-      shell("$HHEd{'trn'} -H $reclmmf{$set} -w $rclammf{$set}.1mix $mku{$set} $lst{'ful'}");
+      shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $rclammf{$set}.1mix $mku{$set} $lst{'ful'}");
    }
 }
 
@@ -745,7 +745,7 @@ if ( $CONVM && !$usestraight ) {
    foreach $set (@SET) {
       foreach $type ( @{ $ref{$set} } ) {
          make_edfile_convert($type);
-         shell("$HHEd{'trn'} -H $reclmmf{$set} $cnv{$type} $lst{'ful'}");
+         shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} $cnv{$type} $lst{'ful'}");
          shell("mv $trd{$set}/trees.$strb{$type} $trv{$type}");
          shell("mv $model{$set}/pdf.$strb{$type} $pdf{$type}");
       }
@@ -761,7 +761,7 @@ if ( $CONVM && !$usestraight ) {
       my $s = 1;
       foreach $type (@cmp) {    # convert hts_engine format
          make_edfile_convert_gv($type);
-         shell("$HHEd{'trn'} -H $clusmmf{'gv'} $gvcnv{$type} $gvdir/gv.list");
+         shell("$HHEd{'trn'} -T 1 -H $clusmmf{'gv'} $gvcnv{$type} $gvdir/gv.list");
          shell("mv $gvdir/trees.$s $gvtrv{$type}");
          shell("mv $gvdir/pdf.$s $gvpdf{$type}");
          $s++;
@@ -834,7 +834,7 @@ if ($MKUNS) {
 
    foreach $set (@SET) {
       make_edfile_mkunseen($set);
-      shell("$HHEd{'trn'} -H $stcmmf{$set} -w $stcammf{$set} $mku{$set} $lst{'ful'}");
+      shell("$HHEd{'trn'} -T 1 -H $stcmmf{$set} -w $stcammf{$set} $mku{$set} $lst{'ful'}");
    }
 }
 
@@ -879,7 +879,7 @@ if ($UPMIX) {
 
    $set = 'cmp';
    make_edfile_upmix($set);
-   shell("$HHEd{'trn'} -H $reclmmf{$set} -w $reclmmf{$set}.2mix $upm{$set} $lst{'ful'}");
+   shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $reclmmf{$set}.2mix $upm{$set} $lst{'ful'}");
 
    $set = 'dur';
    shell("cp $reclmmf{$set} $reclmmf{$set}.2mix");
@@ -912,7 +912,7 @@ if ($MKUN2) {
 
    foreach $set (@SET) {
       make_edfile_mkunseen($set);
-      shell("$HHEd{'trn'} -H $reclmmf{$set} -w $rclammf{$set} $mku{$set} $lst{'ful'}");
+      shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $rclammf{$set} $mku{$set} $lst{'ful'}");
    }
 }
 
