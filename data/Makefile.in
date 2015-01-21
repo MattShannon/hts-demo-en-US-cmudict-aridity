@@ -245,13 +245,14 @@ lab:
 			fi; \
 		done; \
 	else \
+		mkdir -p utts; \
 		cat corpus-train.lst corpus-gen.lst | while read uttId; do \
 			if [ -s txt/$${uttId}.txt ]; then \
 				echo "Extracting labels from txt/$${uttId}.txt"; \
 				$(PERL) scripts/normtext.pl txt/$${uttId}.txt > tmp.txt; \
-				$(TEXT2UTT) tmp.txt > tmp.utt; \
-				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats tmp.utt; \
-				rm -f tmp.txt tmp.utt; \
+				$(TEXT2UTT) tmp.txt > utts/$${uttId}.utt; \
+				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats utts/$${uttId}.utt; \
+				rm -f tmp.txt; \
 			fi; \
 			if [ -s tmp.feats ]; then \
 				$(AWK) -f scripts/label-full.awk tmp.feats > labels/full/$${uttId}.lab; \
