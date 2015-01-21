@@ -1,17 +1,12 @@
-hts-demo-en-US-cmudict
-======================
+hts-demo-en-US-cmudict-aridity
+==============================
 
-This repository contains a copy of the US English
-`HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_.
+This repository contains a version of the US English
+`HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_ which has been modified to
+support some additional features (see below for a list of modifications).
 The HTS demos are designed to demonstrate the capabilities of the
 `HMM-based Speech Synthesis System (HTS) <http://hts.sp.nitech.ac.jp/>`_ for
 statistical parametric speech synthesis.
-
-Please note that this repository is an unofficial copy of the US English HTS
-demo and is not endorsed in any way by the HTS working group who maintains the
-HTS demos.
-Accordingly any questions or bug reports should be directed to the HTS working
-group using the contact details given below.
 
 Overview
 --------
@@ -36,7 +31,7 @@ which are essentially just wav files with the header information removed.
 Modifications from the official version
 ---------------------------------------
 
-This repository contains some minor modifications from the official version of the
+This repository contains modifications from the official version of the
 US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
 
 - it does not include a corpus of text data and speech data for training the
@@ -56,18 +51,18 @@ License
 -------
 
 Please see the file ``License`` for details of the license and warranty for
-hts-demo-en-US-cmudict.
+hts-demo-en-US-cmudict-aridity.
 
 Installation
 ------------
 
 The source code is hosted in the
-`hts-demo-en-US-cmudict github repository <https://github.com/MattShannon/hts-demo-en-US-cmudict>`_.
+`hts-demo-en-US-cmudict-aridity github repository <https://github.com/MattShannon/hts-demo-en-US-cmudict-aridity>`_.
 To obtain the latest source code using git::
 
-    git clone git://github.com/MattShannon/hts-demo-en-US-cmudict.git
+    git clone git://github.com/MattShannon/hts-demo-en-US-cmudict-aridity.git
 
-hts-demo-en-US-cmudict depends on the following software packages:
+hts-demo-en-US-cmudict-aridity depends on the following software packages:
 
 - `Festival <http://www.cstr.ed.ac.uk/projects/festival/>`_
   (for the ``dumpfeats`` script)
@@ -116,12 +111,12 @@ To set-up this directory:
 Bugs
 ----
 
+Bugs specifically about this modified version of the HTS demo can be submitted to the
+`issue tracker <https://github.com/MattShannon/hts-demo-en-US-cmudict-aridity/issues>`_.
 Please use the `HTS users mailing list <mailto:hts-users@sp.nitech.ac.jp>`_ to
-submit bugs related to the US English HTS demo, preferably after verifying that
-the bug still occurs with the most recent official version available from the
+submit bugs related to the original version of US English HTS demo after verifying
+that the bug still occurs with the most recent official version available from the
 `HTS demo website <http://hts.sp.nitech.ac.jp/?Download>`_.
-Bugs specifically about this copy of the HTS demo can be submitted to the
-`issue tracker <https://github.com/MattShannon/hts-demo-en-US-cmudict/issues>`_.
 
 Contact
 -------
@@ -129,5 +124,5 @@ Contact
 The author of the US English HTS demo is the HTS working group.
 More information is available on the `HTS website <http://hts.sp.nitech.ac.jp/>`_
 and from the `HTS users mailing list <mailto:hts-users@sp.nitech.ac.jp>`_.
-The host of the hts-demo-en-US-cmudict github repository is
+The subsequent modifications for hts-demo-en-US-cmudict-aridity were made by
 `Matt Shannon <mailto:matt.shannon@cantab.net>`_.
