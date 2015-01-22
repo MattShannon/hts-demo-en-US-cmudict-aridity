@@ -128,6 +128,8 @@ directory:
 
 To set-up this directory:
 
+- if USEUTT is 0, ensure that the default festival voice produces utterance files
+  which use the ``cmudict`` phoneme set
 - add appropriate text files in ``data/txt`` (if USEUTT is 0), Festival utterance
   files in ``data/utts`` (if USEUTT is 1) and raw audio files in ``data/raw`` for
   the corpus you wish to use during training (see above for details of the formats
@@ -135,9 +137,55 @@ To set-up this directory:
   used with this HTS demo)
 - generate the ``configure`` script from ``configure.ac`` using ``autoconf``
 - follow the instructions for the official version included in ``INSTALL``,
-  setting the USEUTT and USESTRAIGHT ``configure`` variables appropriately.
-  If you are using a corpus other than the CMU ARCTIC corpus for speaker SLT,
-  you may wish to also specify the LOWERF0 and UPPERF0 ``configure`` variables.
+  setting the USEUTT and USESTRAIGHT ``configure`` variables appropriately
+
+Changes required for a different corpus
+---------------------------------------
+
+To use a new corpus of text and audio data using the
+`CMU Pronouncing Dictionary <http://www.speech.cs.cmu.edu/cgi-bin/cmudict>`_
+phoneme set and the default fullcontext label format:
+
+- if USEUTT is 0, ensure that the default festival voice produces utterance files
+  which use the ``cmudict`` phoneme set
+- if USEUTT is 1, process the text data into festival utterance files using one
+  of the festival voices which use the ``cmudict`` phoneme set
+- process the audio data into the raw 48 kHz 16-bit format required (e.g. using
+  sox followed by SPTK's ``wav2raw`` command)
+- change the list of training corpus utterance ids in ``data/corpus-train.lst``
+  and similarly for the test corpus (``data/corpus-test.lst``) and generation
+  corpus (``data/corpus-gen.lst``)
+- select values of the LOWERF0 and UPPERF0 ``configure`` variables which are
+  appropriate for the F0 range of the speaker
+- optionally you may wish to change the DATASET and SPEAKER ``configure``
+  variables, though these are only used in a handful of non-essential places
+- (then follow the relevant parts of the instructions given in the Installation
+  section)
+
+Using a different phoneme set or fullcontext label format requires more extensive
+changes, including at least:
+
+- if USEUTT is 0, ensure the default festival voice produces utterance files which
+  use the desired phoneme set
+- if USEUTT is 0, optionally check that the simple text normalization done by
+  ``data/scripts/normtext.pl`` is appropriate
+- if USEUTT is 1, process the text data into festival utterance files which use
+  the desired phoneme set
+- change the utt-to-lab step to produce label files in the desired fullcontext
+  label format.
+  The code which runs the utt-to-lab step is in ``data/Makefile.in`` and uses the
+  following files:
+
+  - ``data/scripts/extra_feats.scm``
+  - ``data/scripts/label.feats``
+  - ``data/scripts/label-mono.awk``
+  - ``data/scripts/label-full.awk``
+
+- change the question set files in ``data/questions`` to be appropriate for the
+  desired phoneme set and fullcontext label format
+- optionally you may wish to change the FULLCONTEXT_FORMAT, FULLCONTEXT_VERSION
+  and QNUM ``configure`` variables
+- (then follow the relevant parts of the instructions given above)
 
 Bugs
 ----
