@@ -37,6 +37,7 @@ Some majorish differences include:
 
 - it computes test set log probability on a specified test corpus
 - changes to the default values of some ``configure`` variables:
+
   - use STRAIGHT vocoder by default (USESTRAIGHT)
   - use 50 mceps (instead of 35) by default (MGCORDER)
   - don't use modulation spectrum-based generation by default (USEMSPF)
