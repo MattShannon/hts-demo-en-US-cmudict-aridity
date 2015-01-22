@@ -303,6 +303,7 @@ scp:
 	mkdir -p scp
 
 	rm -f scp/train.scp
+	touch scp/train.scp
 	cat corpus-train.lst | while read uttId; do \
 		if [ -s cmp/$${uttId}.cmp -a -s labels/mono/$${uttId}.lab -a -s labels/full/$${uttId}.lab ]; then \
 			echo "`pwd -P`"/cmp/$${uttId}.cmp >> scp/train.scp; \
@@ -311,6 +312,7 @@ scp:
 
 	# Generating a test corpus data script
 	rm -f scp/test.scp
+	touch scp/test.scp
 	cat corpus-test.lst | while read uttId; do \
 		if [ -s cmp/$${uttId}.cmp -a -s labels/full/$${uttId}.lab ]; then \
 			echo "`pwd -P`"/cmp/$${uttId}.cmp >> scp/test.scp; \
@@ -321,6 +323,7 @@ scp:
 
 	# Generating a generation label script
 	rm -f scp/gen.scp
+	touch scp/gen.scp
 	cat corpus-gen.lst | while read uttId; do \
 		echo "`pwd -P`"/labels/full/$${uttId}.lab >> scp/gen.scp; \
 	done
