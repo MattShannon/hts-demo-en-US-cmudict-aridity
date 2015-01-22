@@ -40,11 +40,11 @@
    through ./configure arguments.  For example
 
    % ./configure MGCORDER=34 GAMMA=0 FREQWARP=0.0              (34-th order cepstrum)
-   % ./configure MGCORDER=34 GAMMA=0 FREQWARP=0.55             (34-th order Mel-cepstrum)
+   % ./configure MGCORDER=34 GAMMA=0 FREQWARP=0.55             (34-th order mel-cepstrum)
 
    % ./configure MGCORDER=12 GAMMA=1 FREQWARP=0.0  LNGAIN=0    (12-th order LSP,     linear gain)
    % ./configure MGCORDER=12 GAMMA=1 FREQWARP=0.0  LNGAIN=1    (12-th order LSP,     log gain)
-   % ./configure MGCORDER=12 GAMMA=1 FREQWARP=0.55 LNGAIN=1    (12-th order Mel-LSP, log gain)
+   % ./configure MGCORDER=12 GAMMA=1 FREQWARP=0.55 LNGAIN=1    (12-th order mel-LSP, log gain)
    % ./configure MGCORDER=12 GAMMA=3 FREQWARP=0.55 LNGAIN=1    (12-th order MGC-LSP, log gain)
 
    % ./configure NSTATE=7 NITER=10 WFLOOR=5   (# of HMM states=7, # of EM iterations=10, mix weight floor=5)

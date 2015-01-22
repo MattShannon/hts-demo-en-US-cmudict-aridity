@@ -2168,7 +2168,7 @@ sub get_file_size($) {
    return $file_size;
 }
 
-# sub routine for formant emphasis in Mel-cepstral domain
+# sub routine for formant emphasis in mel-cepstral domain
 sub postfiltering_mcp($$) {
    my ( $base, $gendir ) = @_;
    my ( $i, $line );
@@ -2281,7 +2281,7 @@ sub postfiltering_lsp($$) {
    shell($line);
 }
 
-# sub routine for speech synthesis from log f0 and Mel-cepstral coefficients
+# sub routine for speech synthesis from log f0 and mel-cepstral coefficients
 sub gen_wave($$) {
    my ( $gendir, $useMSPF ) = @_;
    my ( $line, $lgopt, $uttId, $T, $lf0, $bap );
@@ -2377,7 +2377,7 @@ sub gen_wave($$) {
          shell($line);
          $T = get_file_size("$gendir/$uttId.f0 ") / 4;
 
-         # convert Mel-cepstral coefficients to spectrum
+         # convert mel-cepstral coefficients to spectrum
          if ( $gm == 0 ) {
             shell( "$MGC2SP -a $fw -g $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 2048 -o 2 $mgc > $gendir/$uttId.sp" );
          }
