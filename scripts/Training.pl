@@ -407,6 +407,18 @@ if ($ERST0) {
    }
 }
 
+# HERest (computing test set log probability (monophone))
+if ($LTST0) {
+   print_time("computing test set log probability (monophone)");
+
+   if (-s $scp{'tst'}) {
+      shell("$HERest{'tst'} -I $mlf{'mon'} -H $monommf{'cmp'} -N $monommf{'dur'} -M /dev/null -R /dev/null $lst{'mon'} $lst{'mon'}");
+   }
+   else {
+      print("(skipping since test set is empty)\n\n");
+   }
+}
+
 # HSMMAlign (forced alignment (monophone))
 if ($FAL0) {
    print_time("forced alignment (monophone)");

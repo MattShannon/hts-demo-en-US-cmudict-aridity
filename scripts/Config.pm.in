@@ -232,6 +232,7 @@ $HCMPV = 1; # computing a global variance
 $IN_RE = 1; # initialization & reestimation
 $MMMMF = 1; # making a monophone mmf
 $ERST0 = 1; # embedded reestimation (monophone)
+$LTST0 = 1; # computing test set log probability (monophone)
 $FAL0  = 1; # forced alignment (monophone)
 $MN2FL = 1; # copying monophone mmf to fullcontext one
 $ERST1 = 1; # embedded reestimation (fullcontext)
