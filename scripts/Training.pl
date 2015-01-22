@@ -35,6 +35,11 @@ foreach $set (@SET) {
 # data directory
 $datdir = "$prjdir/data";
 
+# utterance id lists
+$corpus{'trn'} = "$datdir/corpus-train.lst";
+$corpus{'tst'} = "$datdir/corpus-test.lst";
+$corpus{'gen'} = "$datdir/corpus-gen.lst";
+
 # data location file
 $scp{'trn'} = "$datdir/scp/train.scp";
 $scp{'tst'} = "$datdir/scp/test.scp";
@@ -2261,118 +2266,119 @@ sub postfiltering_lsp($$) {
 # sub routine for speech synthesis from log f0 and Mel-cepstral coefficients
 sub gen_wave($) {
    my ($gendir) = @_;
-   my ( $line, @FILE, $lgopt, $file, $base, $T, $lf0, $bap );
+   my ( $line, $lgopt, $uttId, $T, $lf0, $bap );
 
-   $line = `ls $gendir/*.mgc`;
-   @FILE = split( '\n', $line );
+   print "Processing directory $gendir:\n";
+
    if ($lg) {
       $lgopt = "-L";
    }
    else {
       $lgopt = "";
    }
-   print "Processing directory $gendir:\n";
-   foreach $file (@FILE) {
-      $base = `basename $file .mgc`;
-      chomp($base);
+
+   open( UTTIDS, $corpus{'gen'} ) || die "Cannot open $!";
+
+   while ( $uttId = <UTTIDS> ) {
+      chomp($uttId);
 
       if ( $gm == 0 ) {
 
          # apply postfiltering
          if ($useMSPF) {
-            postfiltering_mspf( $base, $gendir, 'mgc' );
-            $mgc = "$gendir/$base.p_mgc";
+            postfiltering_mspf( $uttId, $gendir, 'mgc' );
+            $mgc = "$gendir/$uttId.p_mgc";
          }
          elsif ( !$useGV && $pf_mcp != 1.0 ) {
-            postfiltering_mcp( $base, $gendir );
-            $mgc = "$gendir/$base.p_mgc";
+            postfiltering_mcp( $uttId, $gendir );
+            $mgc = "$gendir/$uttId.p_mgc";
          }
          else {
-            $mgc = $file;
+            $mgc = "$gendir/$uttId.mgc";
          }
       }
       else {
 
          # apply postfiltering
          if ($useMSPF) {
-            postfiltering_mspf( $base, $gendir, 'mgc' );
-            $mgc = "$gendir/$base.p_mgc";
+            postfiltering_mspf( $uttId, $gendir, 'mgc' );
+            $mgc = "$gendir/$uttId.p_mgc";
          }
          elsif ( !$useGV && $pf_lsp != 1.0 ) {
-            postfiltering_lsp( $base, $gendir );
-            $mgc = "$gendir/$base.p_mgc";
+            postfiltering_lsp( $uttId, $gendir );
+            $mgc = "$gendir/$uttId.p_mgc";
          }
          else {
-            $mgc = $file;
+            $mgc = "$gendir/$uttId.mgc";
          }
 
          # MGC-LSPs -> MGC coefficients
          $line = "$LSPCHECK -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " $lgopt -c -r 0.1 -g -G 1.0E-10 $mgc | ";
          $line .= "$LSP2LPC -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " $lgopt | ";
-         $line .= "$MGC2MGC -m " . ( $ordr{'mgc'} - 1 ) . " -a $fw -c $gm -n -u -M " . ( $ordr{'mgc'} - 1 ) . " -A $fw -C $gm " . " > $gendir/$base.c_mgc";
+         $line .= "$MGC2MGC -m " . ( $ordr{'mgc'} - 1 ) . " -a $fw -c $gm -n -u -M " . ( $ordr{'mgc'} - 1 ) . " -A $fw -C $gm " . " > $gendir/$uttId.c_mgc";
          shell($line);
 
-         $mgc = "$gendir/$base.c_mgc";
+         $mgc = "$gendir/$uttId.c_mgc";
       }
 
-      $lf0 = "$gendir/$base.lf0";
-      $bap = "$gendir/$base.bap";
+      $lf0 = "$gendir/$uttId.lf0";
+      $bap = "$gendir/$uttId.bap";
 
-      if ( !$usestraight && -s $file && -s $lf0 ) {
-         print " Synthesizing a speech waveform from $base.mgc and $base.lf0...";
+      if ( !$usestraight && -s $mgc && -s $lf0 ) {
+         print " Synthesizing a speech waveform from $uttId.mgc and $uttId.lf0...";
 
          # convert log F0 to pitch
-         $line = "$SOPR -magic -1.0E+10 -EXP -INV -m $sr -MAGIC 0.0 $lf0 > $gendir/${base}.pit";
+         $line = "$SOPR -magic -1.0E+10 -EXP -INV -m $sr -MAGIC 0.0 $lf0 > $gendir/$uttId.pit";
          shell($line);
 
          # synthesize waveform
          $lfil = `$PERL $datdir/scripts/makefilter.pl $sr 0`;
          $hfil = `$PERL $datdir/scripts/makefilter.pl $sr 1`;
 
-         $line = "$SOPR -m 0 $gendir/$base.pit | $EXCITE -n -p $fs | $DFS -b $hfil > $gendir/$base.unv";
+         $line = "$SOPR -m 0 $gendir/$uttId.pit | $EXCITE -n -p $fs | $DFS -b $hfil > $gendir/$uttId.unv";
          shell($line);
 
-         $line = "$EXCITE -n -p $fs $gendir/$base.pit | ";
-         $line .= "$DFS -b $lfil | $VOPR -a $gendir/$base.unv | ";
+         $line = "$EXCITE -n -p $fs $gendir/$uttId.pit | ";
+         $line .= "$DFS -b $lfil | $VOPR -a $gendir/$uttId.unv | ";
          $line .= "$MGLSADF -P 5 -m " . ( $ordr{'mgc'} - 1 ) . " -p $fs -a $fw -c $gm $mgc | ";
-         $line .= "$X2X +fs -o > $gendir/$base.raw";
+         $line .= "$X2X +fs -o > $gendir/$uttId.raw";
          shell($line);
-         $line = "$RAW2WAV -s " . ( $sr / 1000 ) . " -d $gendir $gendir/$base.raw";
+         $line = "$RAW2WAV -s " . ( $sr / 1000 ) . " -d $gendir $gendir/$uttId.raw";
          shell($line);
 
-         $line = "rm -f $gendir/$base.pit $gendir/$base.unv $gendir/$base.raw";
+         $line = "rm -f $gendir/$uttId.pit $gendir/$uttId.unv $gendir/$uttId.raw";
          shell($line);
 
          print "done\n";
       }
-      elsif ( $usestraight && -s $file && -s $lf0 && -s $bap ) {
-         print " Synthesizing a speech waveform from $base.mgc, $base.lf0, and $base.bap... ";
+      elsif ( $usestraight && -s $mgc && -s $lf0 && -s $bap ) {
+         print " Synthesizing a speech waveform from $uttId.mgc, $uttId.lf0, and $uttId.bap... ";
 
          # convert log F0 to F0
-         $line = "$SOPR -magic -1.0E+10 -EXP -MAGIC 0.0 $lf0 > $gendir/${base}.f0 ";
+         $line = "$SOPR -magic -1.0E+10 -EXP -MAGIC 0.0 $lf0 > $gendir/$uttId.f0 ";
          shell($line);
-         $T = get_file_size("$gendir/${base}.f0 ") / 4;
+         $T = get_file_size("$gendir/$uttId.f0 ") / 4;
 
          # convert Mel-cepstral coefficients to spectrum
          if ( $gm == 0 ) {
-            shell( "$MGC2SP -a $fw -g $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 2048 -o 2 $mgc > $gendir/$base.sp" );
+            shell( "$MGC2SP -a $fw -g $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 2048 -o 2 $mgc > $gendir/$uttId.sp" );
          }
          else {
-            shell( "$MGC2SP -a $fw -c $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 2048 -o 2 $mgc > $gendir/$base.sp" );
+            shell( "$MGC2SP -a $fw -c $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 2048 -o 2 $mgc > $gendir/$uttId.sp" );
          }
 
          # convert band-aperiodicity to aperiodicity
-         shell( "$MGC2SP -a $fw -g 0 -m " . ( $ordr{'bap'} - 1 ) . " -l 2048 -o 0 $bap > $gendir/$base.ap" );
+         shell( "$MGC2SP -a $fw -g 0 -m " . ( $ordr{'bap'} - 1 ) . " -l 2048 -o 0 $bap > $gendir/$uttId.ap" );
 
          # synthesize waveform
-         open( SYN, ">$gendir/${base}.m" ) || die "Cannot open $!";
+         open( SYN, ">$gendir/$uttId.m" ) || die "Cannot open $!";
          printf SYN "path(path,'%s');\n",                 ${STRAIGHT};
          printf SYN "prm.spectralUpdateInterval = %f;\n", 1000.0 * $fs / $sr;
          printf SYN "prm.levelNormalizationIndicator = 0;\n\n";
-         printf SYN "fprintf(1,'\\nSynthesizing %s\\n');\n", "$gendir/$base.wav";
-         printf SYN "fid1 = fopen('%s','r','%s');\n",        "$gendir/$base.sp", "ieee-le";
-         printf SYN "fid2 = fopen('%s','r','%s');\n",        "$gendir/$base.ap", "ieee-le";
-         printf SYN "fid3 = fopen('%s','r','%s');\n",        "$gendir/$base.f0", "ieee-le";
+         printf SYN "fprintf(1,'\\nSynthesizing %s\\n');\n", "$gendir/$uttId.wav";
+         printf SYN "fid1 = fopen('%s','r','%s');\n",        "$gendir/$uttId.sp", "ieee-le";
+         printf SYN "fid2 = fopen('%s','r','%s');\n",        "$gendir/$uttId.ap", "ieee-le";
+         printf SYN "fid3 = fopen('%s','r','%s');\n",        "$gendir/$uttId.f0", "ieee-le";
          printf SYN "sp = fread(fid1,[%d, %d],'float');\n",  1025, $T;
          printf SYN "ap = fread(fid2,[%d, %d],'float');\n",  1025, $T;
          printf SYN "f0 = fread(fid3,[%d, %d],'float');\n",  1, $T;
@@ -2381,17 +2387,19 @@ sub gen_wave($) {
          printf SYN "fclose(fid3);\n";
          printf SYN "sp = sp*(" . ( 1024.0 / ( 2200.0 * 32768.0 ) ) . ");\n";    # normalization for STRAIGHT (sdev of amplitude is set to 1024)
          printf SYN "[sy] = exstraightsynth(f0,sp,ap,%d,prm);\n", $sr;
-         printf SYN "wavwrite( sy, %d, '%s');\n\n", $sr, "$gendir/$base.wav";
+         printf SYN "wavwrite( sy, %d, '%s');\n\n", $sr, "$gendir/$uttId.wav";
          printf SYN "quit;\n";
          close(SYN);
-         shell("$MATLAB < $gendir/${base}.m");
+         shell("$MATLAB < $gendir/$uttId.m");
 
-         $line = "rm -f $gendir/$base.m $gendir/$base.sp $gendir/$base.ap $gendir/$base.f0";
+         $line = "rm -f $gendir/$uttId.m $gendir/$uttId.sp $gendir/$uttId.ap $gendir/$uttId.f0";
          shell($line);
 
          print "done\n";
       }
    }
+
+   close(UTTIDS);
 }
 
 # sub routine for modulation spectrum-based postfilter
