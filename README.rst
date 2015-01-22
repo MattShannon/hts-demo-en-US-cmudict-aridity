@@ -105,8 +105,7 @@ directory:
 - whether to use the STRAIGHT vocoder (in which case the ``configure`` variable
   USESTRAIGHT should be set to 1) or the non-STRAIGHT vocoder (in which case
   USESTRAIGHT should be set to 0).
-  Using the non-STRAIGHT vocoder is the default, but using the STRAIGHT vocoder
-  is recommended if possible for better quality.
+  Using the STRAIGHT vocoder is the default.
 
 To set-up this directory:
 

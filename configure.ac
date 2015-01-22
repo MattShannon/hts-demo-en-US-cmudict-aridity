@@ -445,7 +445,7 @@ AC_SUBST(PWD)
 # setting of mel-generalized cepstral analysis, F0 extraction, and postfiltering related settings
 # parse command-line arguments
 AC_ARG_VAR([USEUTT],[generate labels from utt files instead of text files (0:off or 1:on, default=1)])
-AC_ARG_VAR([USESTRAIGHT],[turn on STRAIGHT-based analysis (0:off or 1:on, default=0)])
+AC_ARG_VAR([USESTRAIGHT],[turn on STRAIGHT-based analysis (0:off or 1:on, default=1)])
 AC_ARG_VAR([FRAMELEN],[frame length in point (default=1200)])
 AC_ARG_VAR([FRAMESHIFT],[frame shift in point (default=240)])
 AC_ARG_VAR([WINDOWTYPE],[window type -> 0: Blackman  1: Hamming  2: Hanning (default=1)])
@@ -469,7 +469,7 @@ if test -z "$USEUTT"; then
 fi
 
 if test -z "$USESTRAIGHT"; then
-	USESTRAIGHT=0
+	USESTRAIGHT=1
 fi
 
 if test -z "$FRAMELEN"; then

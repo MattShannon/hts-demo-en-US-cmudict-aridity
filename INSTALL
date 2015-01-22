@@ -22,7 +22,8 @@
    % ./configure --with-fest-search-path=/usr/local/festival/examples \
                  --with-sptk-search-path=/usr/local/SPTK-3.8/bin \
                  --with-hts-search-path=/usr/local/HTS-2.3beta_for_HTK-3.4.1/bin \
-                 --with-hts-engine-search-path=/usr/local/hts_engine_API-1.09/bin
+                 --with-hts-engine-search-path=/usr/local/hts_engine_API-1.09/bin \
+                 USESTRAIGHT=0
 
    Please adjust the above directories for your environment.
    Note that you should specify festival/examples rather than festival/bin.
@@ -33,8 +34,7 @@
                  --with-hts-search-path=/usr/local/HTS-2.3beta_for_HTK-3.4.1/bin \
                  --with-hts-engine-search-path=/usr/local/hts_engine_API-1.09/bin \
                  --with-matlab-search-path=/usr/local/matlab/bin \
-                 --with-straight-path=/usr/local/STRAIGHTV40 \
-                 USESTRAIGHT=1
+                 --with-straight-path=/usr/local/STRAIGHTV40
 
    You can change various parameters such as speech analysis conditions and model training conditions
    through ./configure arguments.  For example
