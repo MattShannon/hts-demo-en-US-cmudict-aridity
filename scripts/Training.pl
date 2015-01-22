@@ -2148,6 +2148,9 @@ sub postfiltering_mcp($$) {
    $line .= "$MERGE -n " . ( $ordr{'mgc'} - 2 ) . " -s 0 -N 0 $gendir/${base}.p_b0 | ";
    $line .= "$B2MC -m " .  ( $ordr{'mgc'} - 1 ) . " -a $fw > $gendir/${base}.p_mgc";
    shell($line);
+
+   $line = "rm -f $gendir/$base.r0 $gendir/$base.p_r0 $gendir/$base.b0 $gendir/$base.p_b0";
+   shell($line);
 }
 
 # sub routine for formant emphasis in LSP domain
@@ -2297,7 +2300,7 @@ sub gen_wave($) {
          $line = "$RAW2WAV -s " . ( $sr / 1000 ) . " -d $gendir $gendir/$base.raw";
          shell($line);
 
-         $line = "rm -f $gendir/$base.unv";
+         $line = "rm -f $gendir/$base.pit $gendir/$base.unv $gendir/$base.raw";
          shell($line);
 
          print "done\n";
@@ -2343,7 +2346,7 @@ sub gen_wave($) {
          close(SYN);
          shell("$MATLAB < $gendir/${base}.m");
 
-         $line = "rm -f $gendir/$base.m";
+         $line = "rm -f $gendir/$base.m $gendir/$base.sp $gendir/$base.ap $gendir/$base.f0";
          shell($line);
 
          print "done\n";
@@ -2399,9 +2402,8 @@ sub postfiltering_mspf($$$) {
    $line = get_cmd_vopr( "$gendir/$base.p_$type.subtracted", "-a", "$gendir/$base.$type.mean", $type );
    shell("$line > $gendir/$base.p_$type");
 
-   # remove temporal files
    shell("rm -f $gendir/$base.$type.mspec_dim* $gendir/$base.$type.mphase_dim* $gendir/$base.p_$type.mspec_dim*");
-   shell("rm -f $gendir/$base.$type.subtracted $gendir/$base.p_$type.subtracted $gendir/$base.$type.mean $gendir/$base.$type.tmp");
+   shell("rm -f $gendir/$base.$type.subtracted $gendir/$base.p_$type.subtracted $gendir/$base.$type.mean $gendir/$base.tmp");
 }
 
 # sub routine for calculating temporal sequence from modulation spectrum/phase
@@ -2602,7 +2604,6 @@ sub make_mspf($) {
                shell("$line >> $mspfstatsdir{$mspftype}/${type}_dim$d.data");
             }
 
-            # remove temporal files
             shell("rm -f $mspfdatdir{$mspftype}/$base.$type.mean");
             shell("rm -f $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
          }
@@ -2618,7 +2619,6 @@ sub make_mspf($) {
             shell( "$VSTAT -o 1 -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $mspfstatsdir{$mspftype}/${type}_dim$d.data > $mspfmean{$type}{$mspftype}[$d]" );
             shell( "$VSTAT -o 2 -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $mspfstatsdir{$mspftype}/${type}_dim$d.data | $SOPR -SQRT > $mspfstdd{$type}{$mspftype}[$d]" );
 
-            # remove temporal files
             shell("rm -f $mspfstatsdir{$mspftype}/${type}_dim$d.data");
          }
       }
