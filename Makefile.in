@@ -57,7 +57,7 @@ clean-data:
 	@ (cd data ; $(MAKE) clean)
 
 clean-voice:
-	rm -rf models stats edfiles trees gv mspf voices gen proto configs
+	rm -rf models stats edfiles trees fal gv mspf voices gen proto configs
 
 distclean: clean
 	@ (cd data; $(MAKE) distclean)

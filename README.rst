@@ -69,6 +69,7 @@ Some minor differences include:
   used for synthesis)
 - a bit more information is written to the log file during decision tree
   clustering, and a bit less during global variance generation
+- forced alignments are produced at several stages of training
 - untied models are removed after use, saving disk space
 - various minor fixes and changes
 

@@ -38,6 +38,7 @@ $datdir = "$prjdir/data";
 # data location file
 $scp{'trn'} = "$datdir/scp/train.scp";
 $scp{'tst'} = "$datdir/scp/test.scp";
+$scp{'trn-tst'} = "$datdir/scp/train-test.scp";
 $scp{'gen'} = "$datdir/scp/gen.scp";
 
 # model list files
@@ -126,6 +127,13 @@ foreach $set (@SET) {
    }
 }
 
+# forced alignment files
+$faldir = "$prjdir/fal/qst${qnum}/ver${ver}";
+$monofal = "$faldir/monophone";
+$rclafal = "$faldir/re_clustered";
+$stcafal = "$faldir/stc";
+$r2mafal = "$faldir/re_clustered.2mix";
+
 # converted model & tree files for hts_engine
 $voice = "$prjdir/voices/qst${qnum}/ver${ver}";
 foreach $set (@SET) {
@@ -151,7 +159,6 @@ $win{$type}[ $d - 1 ] = "${type}.win${d}";
 
 # global variance files and directories for parameter generation
 $gvdir         = "$prjdir/gv/qst${qnum}/ver${ver}";
-$gvfaldir      = "$gvdir/fal";
 $gvdatdir      = "$gvdir/dat";
 $gvlabdir      = "$gvdir/lab";
 $scp{'gv'}     = "$gvdir/gv.scp";
@@ -203,7 +210,8 @@ $HERest{'ful'} = "$HEREST    -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf
 $HERest{'tst'} = "$HEREST    -A -B -C $cfg{'tst'} -D -T 1 -S $scp{'tst'} -I $mlf{'ful'} -m 0 -u d ";
 $HERest{'gv'}  = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
 $HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -p -i ";
-$HSMMAlign     = "$HSMMALIGN -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -t $beam -w 1.0 ";
+$HSMMAlign{'mon'} = "$HSMMALIGN -A -C $cfg{'tst'} -D -T 1 -I $mlf{'mon'} -t $beam -w 1.0 ";
+$HSMMAlign{'ful'} = "$HSMMALIGN -A -C $cfg{'tst'} -D -T 1 -I $mlf{'ful'} -t $beam -w 1.0 ";
 $HMGenS        = "$HMGENS    -A -B -C $cfg{'syn'} -D -T 1                               -t $beam ";
 
 # =============================================================
@@ -215,7 +223,7 @@ if ($MKEMV) {
    print_time("preparing environments");
 
    # make directories
-   foreach $dir ( 'models', 'stats', 'edfiles', 'trees', 'gv', 'mspf', 'voices', 'gen', 'proto', 'configs' ) {
+   foreach $dir ( 'models', 'stats', 'edfiles', 'trees', 'fal', 'gv', 'mspf', 'voices', 'gen', 'proto', 'configs' ) {
       mkdir "$prjdir/$dir",                      0755;
       mkdir "$prjdir/$dir/qst${qnum}",           0755;
       mkdir "$prjdir/$dir/qst${qnum}/ver${ver}", 0755;
@@ -394,6 +402,17 @@ if ($ERST0) {
    }
 }
 
+# HSMMAlign (forced alignment (monophone))
+if ($FAL0) {
+   print_time("forced alignment (monophone)");
+
+   # make directory
+   mkdir "$monofal", 0755;
+
+   # forced alignment
+   shell("$HSMMAlign{'mon'} -S $scp{'trn-tst'} -H $monommf{'cmp'} -N $monommf{'dur'} -m $monofal $lst{'mon'} $lst{'mon'}");
+}
+
 # HHEd (copying monophone mmf to fullcontext one)
 if ($MN2FL) {
    print_time("copying monophone mmf to fullcontext one");
@@ -530,20 +549,6 @@ if ($ERST4) {
    # compress reestimated mmfs
    foreach $set (@SET) {
       shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.embedded.gz");
-   }
-}
-
-# HSMMAlign (forced alignment)
-if ($FALGN) {
-   print_time("forced alignment");
-
-   if ( ( $useGV && $nosilgv && @slnt > 0 ) || ($useMSPF) ) {
-
-      # make directory
-      mkdir "$gvfaldir", 0755;
-
-      # forced alignment
-      shell("$HSMMAlign -H $monommf{'cmp'} -N $monommf{'dur'} -m $gvfaldir $lst{'mon'} $lst{'mon'}");
    }
 }
 
@@ -685,6 +690,19 @@ if ($LTST1) {
    }
 }
 
+# HSMMAlign (forced alignment (1mix))
+if ($FAL1) {
+   print_time("forced alignment (1mix)");
+
+   # make directory
+   mkdir "$rclafal", 0755;
+
+   $mix = '1mix';
+
+   # forced alignment
+   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -m $rclafal $tiedlst{'cmp'} $tiedlst{'dur'}");
+}
+
 $useMSPF = 0;    # turn off modulation spectrum-based postfilter for following step
 
 # HHEd (converting mmfs to the HTS voice format)
@@ -823,6 +841,17 @@ if ($LTSTS) {
    }
 }
 
+# HSMMAlign (forced alignment (stc))
+if ($FALS) {
+   print_time("forced alignment (stc)");
+
+   # make directory
+   mkdir "$stcafal", 0755;
+
+   # forced alignment
+   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $stcammf{'cmp'} -N $stcammf{'dur'} -m $stcafal $tiedlst{'cmp'} $tiedlst{'dur'}");
+}
+
 # HHED (increasing the number of mixture components (1mix -> 2mix))
 if ($UPMIX) {
    print_time("increasing the number of mixture components (1mix -> 2mix)");
@@ -899,6 +928,17 @@ if ($LTST2) {
    else {
       print("(skipping since test set is empty)\n\n");
    }
+}
+
+# HSMMAlign (forced alignment (2mix))
+if ($FAL2) {
+   print_time("forced alignment (2mix)");
+
+   # make directory
+   mkdir "$r2mafal", 0755;
+
+   # forced alignment
+   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $rclammf{'cmp'} -N $rclammf{'dur'} -m $r2mafal $tiedlst{'cmp'} $tiedlst{'dur'}");
 }
 
 # sub routines ============================
@@ -1183,7 +1223,7 @@ sub make_data_gv {
          if ( $nosilgv && @slnt > 0 ) {
             shell("rm -f $gvdatdir/tmp.$type");
             shell("touch $gvdatdir/tmp.$type");
-            open( F, "$gvfaldir/$base.lab" ) || die "Cannot open $!";
+            open( F, "$monofal/$base.lab" ) || die "Cannot open $!";
             while ( $str = <F> ) {
                chomp($str);
                @arr = split( / /, $str );
@@ -2515,7 +2555,7 @@ sub make_full_fal() {
       chomp($base);
 
       open( LAB,  "$datdir/labels/full/$base.lab" ) || die "Cannot open $!";
-      open( IFAL, "$gvfaldir/$base.lab" )           || die "Cannot open $!";
+      open( IFAL, "$monofal/$base.lab" )            || die "Cannot open $!";
       open( OFAL, ">$mspffaldir/$base.lab" )        || die "Cannot open $!";
 
       while ( ( $istr = <IFAL> ) && ( $lstr = <LAB> ) ) {
@@ -2578,7 +2618,7 @@ sub make_mspf($) {
             if ( @slnt > 0 ) {
                shell("rm -f $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
                shell("touch $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
-               open( F, "$gvfaldir/$base.lab" ) || die "Cannot open $!";
+               open( F, "$monofal/$base.lab" ) || die "Cannot open $!";
                while ( $str = <F> ) {
                   chomp($str);
                   @arr = split( / /, $str );

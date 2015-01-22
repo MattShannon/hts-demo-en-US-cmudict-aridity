@@ -317,6 +317,8 @@ scp:
 		fi \
 	done
 
+	cat scp/train.scp scp/test.scp > scp/train-test.scp
+
 	# Generating a generation label script
 	rm -f scp/gen.scp
 	cat corpus-gen.lst | while read uttId; do \
