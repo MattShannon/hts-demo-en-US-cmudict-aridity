@@ -130,8 +130,7 @@ To set-up this directory:
 - follow the instructions for the official version included in ``INSTALL``,
   setting the USEUTT and USESTRAIGHT ``configure`` variables appropriately.
   If you are using a corpus other than the CMU ARCTIC corpus for speaker SLT,
-  you may wish to also specify the LOWERF0, UPPERF0, DATASET and SPEAKER
-  ``configure`` variables.
+  you may wish to also specify the LOWERF0 and UPPERF0 ``configure`` variables.
 
 Bugs
 ----
