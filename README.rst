@@ -42,6 +42,11 @@ Some majorish differences include:
   - use 50 mceps (instead of 35) by default (MGCORDER)
   - don't use modulation spectrum-based generation by default (USEMSPF)
 
+- changes to the default settings in ``scripts/Config.pm.in``:
+
+  - use an MDL tuning factor of 0.6 for mgc stream (instead of 1.0) by default
+    (may result in better quality speech)
+
 Some minor differences include:
 
 - it does not include a corpus of text data and speech data for training the

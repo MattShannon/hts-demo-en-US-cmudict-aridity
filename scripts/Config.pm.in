@@ -36,7 +36,7 @@ $ref{'dur'} = \@dur;
          'bap' => '000',
          'dur' => '000');
 
-%mdlf = ('mgc' => '1.0',            # tree size control param. for MDL
+%mdlf = ('mgc' => '0.6',            # tree size control param. for MDL
          'lf0' => '1.0',
          'bap' => '1.0',
          'dur' => '1.0');
