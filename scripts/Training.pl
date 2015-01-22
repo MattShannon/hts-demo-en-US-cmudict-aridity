@@ -134,10 +134,10 @@ foreach $set (@SET) {
 
 # forced alignment files
 $faldir = "$prjdir/fal/qst${qnum}/ver${ver}";
-$monofal = "$faldir/monophone";
-$rclafal = "$faldir/re_clustered";
+$monofal = "$faldir/mono";
+$rclafal = "$faldir/1mix";
 $stcafal = "$faldir/stc";
-$r2mafal = "$faldir/re_clustered.2mix";
+$r2mafal = "$faldir/2mix";
 
 # converted model & tree files for hts_engine
 $voice = "$prjdir/voices/qst${qnum}/ver${ver}";
