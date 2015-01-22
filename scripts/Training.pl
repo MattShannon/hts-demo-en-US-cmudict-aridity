@@ -448,10 +448,8 @@ if ($CXCL1) {
       shell("mv $fullmmf{$set} $clusmmf{$set}");
 
       foreach $type ( @{ $ref{$set} } ) {
-         if ( $strw{$type} > 0.0 ) {
-            make_edfile_state($type);
-            shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
-         }
+         make_edfile_state($type);
+         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
       }
       shell("gzip -c $clusmmf{$set} > $clusmmf{$set}.nonembedded.gz");
    }
@@ -1653,9 +1651,7 @@ sub make_edfile_untie($) {
             print EDFILE "UT {*.state[$i]}\n";
          }
          else {
-            if ( $strw{$type} > 0.0 ) {
-               print EDFILE "UT {*.state[$i].stream[$strb{$type}-$stre{$type}]}\n";
-            }
+            print EDFILE "UT {*.state[$i].stream[$strb{$type}-$stre{$type}]}\n";
          }
       }
    }
