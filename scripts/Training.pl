@@ -1443,6 +1443,7 @@ sub make_config {
    print CONF "APPLYVFLOOR = T\n";
    print CONF "NATURALREADORDER = T\n";
    print CONF "NATURALWRITEORDER = T\n";
+   print CONF "TREEMERGE = F\n";
    print CONF "VFLOORSCALESTR = \"Vector $nstream{'cmp'}{'total'}";
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
