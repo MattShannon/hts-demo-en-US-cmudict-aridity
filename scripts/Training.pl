@@ -212,7 +212,7 @@ $HInit         = "$HINIT     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}        
 $HRest         = "$HREST     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}                -m 1 -u tmvw    -w $wf ";
 $HERest{'mon'} = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -m 1 -u tmvwdmv -w $wf -t $beam ";
 $HERest{'ful'} = "$HEREST    -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'ful'} -m 1 -u tmvwdmv -w $wf -t $beam ";
-$HERest{'tst'} = "$HEREST    -A -B -C $cfg{'tst'} -D -T 1 -S $scp{'tst'} -I $mlf{'ful'} -m 0 -u d ";
+$HERest{'tst'} = "$HEREST    -A -B -C $cfg{'tst'} -D -T 1 -S $scp{'tst'}                -m 0 -u d ";
 $HERest{'gv'}  = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
 $HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -p -i ";
 $HSMMAlign{'mon'} = "$HSMMALIGN -A -C $cfg{'tst'} -D -T 1 -I $mlf{'mon'} -t $beam -w 1.0 ";
@@ -700,7 +700,7 @@ if ($LTST1) {
    $mix = '1mix';
 
    if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
+      shell("$HERest{'tst'} -I $mlf{'ful'} -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
    }
    else {
       print("(skipping since test set is empty)\n\n");
@@ -851,7 +851,7 @@ if ($LTSTS) {
    print_time("computing test set log probability (stc)");
 
    if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -H $stcammf{'cmp'} -N $stcammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
+      shell("$HERest{'tst'} -I $mlf{'ful'} -H $stcammf{'cmp'} -N $stcammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
    }
    else {
       print("(skipping since test set is empty)\n\n");
@@ -940,7 +940,7 @@ if ($LTST2) {
    print_time("computing test set log probability (2mix)");
 
    if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -H $rclammf{'cmp'} -N $rclammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
+      shell("$HERest{'tst'} -I $mlf{'ful'} -H $rclammf{'cmp'} -N $rclammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
    }
    else {
       print("(skipping since test set is empty)\n\n");
