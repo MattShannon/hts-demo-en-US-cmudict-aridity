@@ -1,8 +1,8 @@
 
-* Installation of HTS-demo_CMU-ARCTIC-SLT
-==========================================
+* Installation of hts-demo-en-US-cmudict-aridity
+=================================================
 
-1. HTS-demo_CMU-ARCTIC-SLT requires Festival-2.4, SPTK-3.8, HTS-2.3 beta, and hts_engine API-1.09.
+1. hts-demo-en-US-cmudict-aridity requires Festival-2.4, SPTK-3.8, HTS-2.3 beta, and hts_engine API-1.09.
    Please install them before running this demo.
    You can download them from the following websites:
 
@@ -16,9 +16,9 @@
    STRAIGHT: http://www.wakayama-u.ac.jp/~kawahara/STRAIGHTtrial/
 
 
-2. Setup HTS-demo_CMU-ARCTIC-SLT by running configure script:
+2. Setup hts-demo-en-US-cmudict-aridity by running configure script:
 
-   % cd HTS-demo_CMU-ARCTIC-SLT
+   % cd hts-demo-en-US-cmudict-aridity
    % ./configure --with-fest-search-path=/usr/local/festival/examples \
                  --with-sptk-search-path=/usr/local/SPTK-3.8/bin \
                  --with-hts-search-path=/usr/local/HTS-2.3beta_for_HTK-3.4.1/bin \
@@ -56,7 +56,7 @@
 
 3. Start running demonstration as follows:
 
-   % cd HTS-demo_CMU-ARCTIC-SLT
+   % cd hts-demo-en-US-cmudict-aridity
    % make
 
    After composing training data, HMMs are estimated and speech waveforms are synthesized.
