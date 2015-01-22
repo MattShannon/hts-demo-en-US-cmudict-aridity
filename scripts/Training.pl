@@ -422,7 +422,6 @@ if ($MN2FL) {
       close(EDFILE);
 
       shell("$HHEd{'trn'} -T 1 -H $monommf{$set} -w $fullmmf{$set} $m2f{$set} $lst{'mon'}");
-      shell("gzip -c $fullmmf{$set} > $fullmmf{$set}.nonembedded.gz");
    }
 }
 
@@ -435,11 +434,6 @@ if ($ERST1) {
    # embedded reestimation
    print("\n\nEmbedded Re-estimation\n");
    shell("$HERest{'ful'} -H $fullmmf{'cmp'} -N $fullmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $opt $lst{'ful'} $lst{'ful'}");
-
-   # compress reestimated model
-   foreach $set (@SET) {
-      shell("gzip -c $fullmmf{$set} > ${fullmmf{$set}}.embedded.gz");
-   }
 }
 
 # HHEd (tree-based context clustering)
@@ -451,17 +445,15 @@ if ($CXCL1) {
 
    # tree-based clustering
    foreach $set (@SET) {
-      shell("cp $fullmmf{$set} $clusmmf{$set}");
+      shell("mv $fullmmf{$set} $clusmmf{$set}");
 
-      $footer = "";
       foreach $type ( @{ $ref{$set} } ) {
          if ( $strw{$type} > 0.0 ) {
             make_edfile_state($type);
             shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
-            $footer .= "_$type";
-            shell("gzip -c $clusmmf{$set} > $clusmmf{$set}$footer.gz");
          }
       }
+      shell("gzip -c $clusmmf{$set} > $clusmmf{$set}.nonembedded.gz");
    }
 }
 
@@ -518,15 +510,11 @@ if ($CXCL2) {
 
    # tree-based clustering
    foreach $set (@SET) {
-      shell("cp $untymmf{$set} $reclmmf{$set}");
+      shell("mv $untymmf{$set} $reclmmf{$set}");
 
-      $footer = "";
       foreach $type ( @{ $ref{$set} } ) {
          make_edfile_state($type);
          shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$type} $lst{'ful'}");
-
-         $footer .= "_$type";
-         shell("gzip -c $reclmmf{$set} > $reclmmf{$set}$footer.gz");
       }
       shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.nonembedded.gz");
    }
