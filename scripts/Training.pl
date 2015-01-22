@@ -94,11 +94,14 @@ foreach $set (@SET) {
    $stcmmf{$set}  = "$model{$set}/stc.mmf";
    $stcammf{$set} = "$model{$set}/stc_all.mmf";
    $stcbase{$set} = "$model{$set}/stc.base";
+   $r2mmmf{$set}  = "$model{$set}/re_clustered_2mix.mmf";
+   $r2mammf{$set} = "$model{$set}/re_clustered_2mix_all.mmf";
 }
 
 # statistics files
 foreach $set (@SET) {
-   $stats{$set} = "$prjdir/stats/qst${qnum}/ver${ver}/${set}.stats";
+   $stats{'clus'}{$set} = "$prjdir/stats/qst${qnum}/ver${ver}/clus_${set}.stats";
+   $stats{'recl'}{$set} = "$prjdir/stats/qst${qnum}/ver${ver}/recl_${set}.stats";
 }
 
 # model edit files
@@ -111,7 +114,8 @@ foreach $set (@SET) {
    $upm{$set} = "$hed{$set}/upm.hed";
    foreach $type ( @{ $ref{$set} } ) {
       $cnv{$type} = "$hed{$set}/cnv_$type.hed";
-      $cxc{$type} = "$hed{$set}/cxc_$type.hed";
+      $cxc{'clus'}{$type} = "$hed{$set}/cxc_clus_$type.hed";
+      $cxc{'recl'}{$type} = "$hed{$set}/cxc_recl_$type.hed";
    }
 }
 
@@ -128,7 +132,8 @@ foreach $set (@SET) {
    $trd{$set} = "${prjdir}/trees/qst${qnum}/ver${ver}/${set}";
    foreach $type ( @{ $ref{$set} } ) {
       $mdl{$type} = "-m -a $mdlf{$type}" if ( $thr{$type} eq '000' );
-      $tre{$type} = "$trd{$set}/${type}.inf";
+      $tre{'clus'}{$type} = "$trd{$set}/clus_${type}.inf";
+      $tre{'recl'}{$type} = "$trd{$set}/recl_${type}.inf";
    }
 }
 
@@ -465,7 +470,9 @@ if ($MN2FL) {
 if ($ERST1) {
    print_time("embedded reestimation (fullcontext)");
 
-   $opt = "-C $cfg{'nvf'} -s $stats{'cmp'} -w 0.0";
+   $treeId = "clus";
+
+   $opt = "-C $cfg{'nvf'} -s $stats{$treeId}{'cmp'} -w 0.0";
 
    # embedded reestimation
    print("\n\nEmbedded Re-estimation\n");
@@ -476,16 +483,18 @@ if ($ERST1) {
 if ($CXCL1) {
    print_time("tree-based context clustering");
 
+   $treeId = "clus";
+
    # convert cmp stats to duration ones
-   convstats();
+   convstats($treeId);
 
    # tree-based clustering
    foreach $set (@SET) {
       shell("mv $fullmmf{$set} $clusmmf{$set}");
 
       foreach $type ( @{ $ref{$set} } ) {
-         make_edfile_state($type);
-         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
+         make_edfile_state( $type, $treeId );
+         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$treeId}{$type} $lst{'ful'}");
       }
       shell("gzip -c $clusmmf{$set} > $clusmmf{$set}.nonembedded.gz");
    }
@@ -516,20 +525,13 @@ if ($UNTIE) {
    }
 }
 
-# fix variables
-foreach $set (@SET) {
-   $stats{$set} .= ".untied";
-   foreach $type ( @{ $ref{$set} } ) {
-      $tre{$type} .= ".untied";
-      $cxc{$type} .= ".untied";
-   }
-}
-
 # HERest (embedded reestimation (untied))
 if ($ERST3) {
    print_time("embedded reestimation (untied)");
 
-   $opt = "-C $cfg{'nvf'} -s $stats{'cmp'} -w 0.0";
+   $treeId = "recl";
+
+   $opt = "-C $cfg{'nvf'} -s $stats{$treeId}{'cmp'} -w 0.0";
 
    print("\n\nEmbedded Re-estimation for untied mmfs\n");
    shell("$HERest{'ful'} -H $untymmf{'cmp'} -N $untymmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $opt $lst{'ful'} $lst{'ful'}");
@@ -539,16 +541,18 @@ if ($ERST3) {
 if ($CXCL2) {
    print_time("tree-based context clustering");
 
+   $treeId = "recl";
+
    # convert cmp stats to duration ones
-   convstats();
+   convstats($treeId);
 
    # tree-based clustering
    foreach $set (@SET) {
       shell("mv $untymmf{$set} $reclmmf{$set}");
 
       foreach $type ( @{ $ref{$set} } ) {
-         make_edfile_state($type);
-         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$type} $lst{'ful'}");
+         make_edfile_state( $type, $treeId );
+         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$treeId}{$type} $lst{'ful'}");
       }
       shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.nonembedded.gz");
    }
@@ -664,8 +668,10 @@ if ($TMSPF) {
 if ($MKUN1) {
    print_time("making unseen models (1mix)");
 
+   $treeId = "recl";
+
    foreach $set (@SET) {
-      make_edfile_mkunseen($set);
+      make_edfile_mkunseen( $set, $treeId );
       shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $rclammf{$set}.1mix $mku{$set} $lst{'ful'}");
    }
 }
@@ -690,7 +696,7 @@ if ($WGEN1) {
    $mix = '1mix';
    $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
 
-   gen_wave("$dir");
+   gen_wave("$dir", $useMSPF);
 }
 
 # HERest (computing test set log probability (1mix))
@@ -720,16 +726,16 @@ if ($FAL1) {
    shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -m $rclafal $tiedlst{'cmp'} $tiedlst{'dur'}");
 }
 
-$useMSPF = 0;    # turn off modulation spectrum-based postfilter for following step
-
 # HHEd (converting mmfs to the HTS voice format)
 if ( $CONVM && !$usestraight ) {
    print_time("converting mmfs to the HTS voice format");
 
+   $treeId = "recl";
+
    # models and trees
    foreach $set (@SET) {
       foreach $type ( @{ $ref{$set} } ) {
-         make_edfile_convert($type);
+         make_edfile_convert( $type, $treeId );
          shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} $cnv{$type} $lst{'ful'}");
          shell("mv $trd{$set}/trees.$strb{$type} $trv{$type}");
          shell("mv $model{$set}/pdf.$strb{$type} $pdf{$type}");
@@ -817,8 +823,10 @@ if ($SEMIT) {
 if ($MKUNS) {
    print_time("making unseen models (stc)");
 
+   $treeId = "recl";
+
    foreach $set (@SET) {
-      make_edfile_mkunseen($set);
+      make_edfile_mkunseen( $set, $treeId );
       shell("$HHEd{'trn'} -T 1 -H $stcmmf{$set} -w $stcammf{$set} $mku{$set} $lst{'ful'}");
    }
 }
@@ -843,7 +851,7 @@ if ($WGENS) {
    $mix = 'stc';
    $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
 
-   gen_wave("$dir");
+   gen_wave("$dir", 0);
 }
 
 # HERest (computing test set log probability (stc))
@@ -875,17 +883,11 @@ if ($UPMIX) {
 
    $set = 'cmp';
    make_edfile_upmix($set);
-   shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $reclmmf{$set}.2mix $upm{$set} $lst{'ful'}");
+   shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $r2mmmf{$set} $upm{$set} $lst{'ful'}");
 
    $set = 'dur';
-   shell("cp $reclmmf{$set} $reclmmf{$set}.2mix");
+   shell("cp $reclmmf{$set} $r2mmmf{$set}");
 }
-
-# fix variables
-$reclmmf{'dur'} .= ".2mix";
-$reclmmf{'cmp'} .= ".2mix";
-$rclammf{'dur'} .= ".2mix";
-$rclammf{'cmp'} .= ".2mix";
 
 # HERest (embedded reestimation (2mix))
 if ($ERST5) {
@@ -893,12 +895,12 @@ if ($ERST5) {
 
    for ( $i = 1 ; $i <= $nIte ; $i++ ) {
       print("\n\nIteration $i of Embedded Re-estimation\n");
-      shell("$HERest{'ful'} -H $reclmmf{'cmp'} -N $reclmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'ful'} $lst{'ful'}");
+      shell("$HERest{'ful'} -H $r2mmmf{'cmp'} -N $r2mmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'ful'} $lst{'ful'}");
    }
 
    # compress reestimated mmfs
    foreach $set (@SET) {
-      shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.embedded.gz");
+      shell("gzip -c $r2mmmf{$set} > $r2mmmf{$set}.embedded.gz");
    }
 }
 
@@ -906,9 +908,11 @@ if ($ERST5) {
 if ($MKUN2) {
    print_time("making unseen models (2mix)");
 
+   $treeId = "recl";
+
    foreach $set (@SET) {
-      make_edfile_mkunseen($set);
-      shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $rclammf{$set} $mku{$set} $lst{'ful'}");
+      make_edfile_mkunseen( $set, $treeId );
+      shell("$HHEd{'trn'} -T 1 -H $r2mmmf{$set} -w $r2mammf{$set} $mku{$set} $lst{'ful'}");
    }
 }
 
@@ -922,7 +926,7 @@ if ($PGEN2) {
    mkdir $dir, 0755;
 
    # generate parameter
-   shell("$HMGenS -S $scp{'gen'} -c $pgtype -H $rclammf{'cmp'} -N $rclammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
+   shell("$HMGenS -S $scp{'gen'} -c $pgtype -H $r2mammf{'cmp'} -N $r2mammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
 }
 
 # SPTK (synthesizing waveforms (2mix))
@@ -932,7 +936,7 @@ if ($WGEN2) {
    $mix = '2mix';
    $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
 
-   gen_wave("$dir");
+   gen_wave("$dir", 0);
 }
 
 # HERest (computing test set log probability (2mix))
@@ -940,7 +944,7 @@ if ($LTST2) {
    print_time("computing test set log probability (2mix)");
 
    if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -I $mlf{'ful'} -H $rclammf{'cmp'} -N $rclammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
+      shell("$HERest{'tst'} -I $mlf{'ful'} -H $r2mammf{'cmp'} -N $r2mammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
    }
    else {
       print("(skipping since test set is empty)\n\n");
@@ -955,7 +959,7 @@ if ($FAL2) {
    mkdir "$r2mafal", 0755;
 
    # forced alignment
-   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $rclammf{'cmp'} -N $rclammf{'dur'} -m $r2mafal $tiedlst{'cmp'} $tiedlst{'dur'}");
+   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $r2mammf{'cmp'} -N $r2mammf{'dur'} -m $r2mafal $tiedlst{'cmp'} $tiedlst{'dur'}");
 }
 
 # sub routines ============================
@@ -1629,8 +1633,8 @@ sub make_config {
 }
 
 # sub routine for generating .hed files for decision-tree clustering
-sub make_edfile_state($) {
-   my ($type) = @_;
+sub make_edfile_state($$) {
+   my ( $type, $treeId ) = @_;
    my ( @lines, $i, @nstate );
 
    $nstate{'cmp'} = $nState;
@@ -1640,9 +1644,9 @@ sub make_edfile_state($) {
    @lines = <QSFILE>;
    close(QSFILE);
 
-   open( EDFILE, ">$cxc{$type}" ) || die "Cannot open $!";
+   open( EDFILE, ">$cxc{$treeId}{$type}" ) || die "Cannot open $!";
    print EDFILE "// load stats file\n";
-   print EDFILE "RO $gam{$type} \"$stats{$t2s{$type}}\"\n\n";
+   print EDFILE "RO $gam{$type} \"$stats{$treeId}{$t2s{$type}}\"\n\n";
    print EDFILE "TR 0\n\n";
    print EDFILE "// questions for decision tree-based context clustering\n";
    print EDFILE @lines;
@@ -1654,7 +1658,7 @@ sub make_edfile_state($) {
    }
    print EDFILE "\nTR 1\n\n";
    print EDFILE "// output constructed trees\n";
-   print EDFILE "ST \"$tre{$type}\"\n";
+   print EDFILE "ST \"$tre{$treeId}{$type}\"\n";
    close(EDFILE);
 }
 
@@ -1742,9 +1746,11 @@ sub make_edfile_upmix($) {
 }
 
 # sub routine to convert statistics file for cmp into one for dur
-sub convstats {
-   open( IN,  "$stats{'cmp'}" )  || die "Cannot open $!";
-   open( OUT, ">$stats{'dur'}" ) || die "Cannot open $!";
+sub convstats($) {
+   my ($treeId) = @_;
+
+   open( IN,  "$stats{$treeId}{'cmp'}" )  || die "Cannot open $!";
+   open( OUT, ">$stats{$treeId}{'dur'}" ) || die "Cannot open $!";
    while (<IN>) {
       @LINE = split(' ');
       printf OUT ( "%4d %14s %4d %4d\n", $LINE[0], $LINE[1], $LINE[2], $LINE[2] );
@@ -1754,13 +1760,13 @@ sub convstats {
 }
 
 # sub routine for generating .hed files for mmf -> hts_engine conversion
-sub make_edfile_convert($) {
-   my ($type) = @_;
+sub make_edfile_convert($$) {
+   my ( $type, $treeId ) = @_;
 
    open( EDFILE, ">$cnv{$type}" ) || die "Cannot open $!";
    print EDFILE "\nTR 2\n\n";
    print EDFILE "// load trees for $type\n";
-   print EDFILE "LT \"$tre{$type}\"\n\n";
+   print EDFILE "LT \"$tre{$treeId}{$type}\"\n\n";
 
    print EDFILE "// convert loaded trees for hts_engine format\n";
    print EDFILE "CT \"$trd{$t2s{$type}}\"\n\n";
@@ -1790,15 +1796,15 @@ sub make_edfile_convert_gv($) {
 }
 
 # sub routine for generating .hed files for making unseen models
-sub make_edfile_mkunseen($) {
-   my ($set) = @_;
+sub make_edfile_mkunseen($$) {
+   my ( $set, $treeId ) = @_;
    my ($type);
 
    open( EDFILE, ">$mku{$set}" ) || die "Cannot open $!";
    print EDFILE "\nTR 2\n\n";
    foreach $type ( @{ $ref{$set} } ) {
       print EDFILE "// load trees for $type\n";
-      print EDFILE "LT \"$tre{$type}\"\n\n";
+      print EDFILE "LT \"$tre{$treeId}{$type}\"\n\n";
    }
 
    print EDFILE "// make unseen model\n";
@@ -2276,8 +2282,8 @@ sub postfiltering_lsp($$) {
 }
 
 # sub routine for speech synthesis from log f0 and Mel-cepstral coefficients
-sub gen_wave($) {
-   my ($gendir) = @_;
+sub gen_wave($$) {
+   my ( $gendir, $useMSPF ) = @_;
    my ( $line, $lgopt, $uttId, $T, $lf0, $bap );
 
    print "Processing directory $gendir:\n";
