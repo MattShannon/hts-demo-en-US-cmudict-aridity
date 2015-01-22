@@ -1344,7 +1344,7 @@ sub copy_aver2full_gv {
 sub copy_aver2clus_gv {
    my ( $find, $head, $mid, $tail, $str, $tmp, $s, @pdfs );
 
-   # initaialize
+   # initialize
    $find = 0;
    $head = "";
    $mid  = "";
@@ -1621,7 +1621,7 @@ sub make_config {
 
    close(CONF);
 
-   # config file for alignend parameter generation
+   # config file for aligned parameter generation
    open( CONF, ">$cfg{'apg'}" ) || die "Cannot open $!";
    print CONF "MODELALIGN = T\n";
    close(CONF);
