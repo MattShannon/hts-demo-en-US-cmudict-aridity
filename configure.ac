@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(hts-demo-en-US-cmudict-aridity, 2.3b-aridity-0.1.dev1, https://github.com/MattShannon/hts-demo-en-US-cmudict-aridity/issues and hts-users@sp.nitech.ac.jp)
+AC_INIT(hts-demo-en-US-cmudict-aridity, 2.3b-aridity-0.1.dev1, https://github.com/MattShannon/hts-demo-en-US-cmudict-aridity/issues)
 AC_COPYRIGHT(Copyright 2015 Matt Shannon)
 AC_COPYRIGHT(Copyright 2001-2014 Nagoya Institute of Technology)
 AC_COPYRIGHT(Copyright 2001-2008 Tokyo Institute of Technology)
