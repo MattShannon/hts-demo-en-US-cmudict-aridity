@@ -264,7 +264,7 @@ mlf:
 	echo "\"*/*.lab\" -> \"`pwd -P`/labels/mono\"" >> labels/mono.mlf
 
 	echo "#!MLF!#" > labels/full.mlf
-	echo "\"*/*.lab\" -> \"`pwd -P`/data/labels/full\"" >> labels/full.mlf
+	echo "\"*/*.lab\" -> \"`pwd -P`/labels/full\"" >> labels/full.mlf
 
 list:
 	# Generating a fullcontext model list file
