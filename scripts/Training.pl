@@ -627,7 +627,7 @@ if ($MCDGV) {
          shell("cp $fullmmf{'gv'} $clusmmf{'gv'}");
          foreach $type (@cmp) {
             make_edfile_state_gv( $type, $s );
-            shell("$HHEd{'trn'} -T 1 -H $clusmmf{'gv'} $gvmdl{$type} -w $clusmmf{'gv'} $gvcxc{$type} $gvdir/gv.list");
+            shell("$HHEd{'trn'} -T 3 -H $clusmmf{'gv'} $gvmdl{$type} -w $clusmmf{'gv'} $gvcxc{$type} $gvdir/gv.list");
             $s++;
          }
 
