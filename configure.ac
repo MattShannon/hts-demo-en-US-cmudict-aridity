@@ -454,7 +454,7 @@ AC_ARG_VAR([FFTLEN],[FFT length in point (default=2048)])
 AC_ARG_VAR([SAMPFREQ],[sampling frequency in Hz (default=48000)])
 AC_ARG_VAR([FREQWARP],[frequency warping factor (default=0.55)])
 AC_ARG_VAR([GAMMA],[pole/zero weight factor (0: mel-cepstral analysis  1: LPC analysis  2,3,...,N: mel-generalized cepstral (MGC) analysis) (default=0)])
-AC_ARG_VAR([MGCORDER],[order of MGC analysis (default=34 for cepstral form, default=12 for LSP form)])
+AC_ARG_VAR([MGCORDER],[order of MGC analysis (default=49 for cepstral form, default=12 for LSP form)])
 AC_ARG_VAR([BAPORDER],[order of BAP analysis (default=24)])
 AC_ARG_VAR([LNGAIN],[use logarithmic gain instead of linear gain (default=1)])
 AC_ARG_VAR([LOWERF0],[lower limit for F0 extraction in Hz (default=110)])
@@ -516,7 +516,7 @@ fi
 
 if test -z "$MGCORDER"; then
 	if test $GAMMA -eq 0; then
-		MGCORDER=34
+		MGCORDER=49
 	else
 		MGCORDER=12
 	fi
@@ -638,7 +638,7 @@ AC_ARG_VAR([MINDUR],[minimum duration to be evaluated (default=5)])
 AC_ARG_VAR([NMGCTRANSBLK],[number of blocks for MGC transforms (default=3)])
 AC_ARG_VAR([NLF0TRANSBLK],[number of blocks for log F0 transforms (default=1)])
 AC_ARG_VAR([NBAPTRANSBLK],[number of blocks for band aperiodicity transforms (default=3)])
-AC_ARG_VAR([MGCBANDWIDTH],[band width for MGC transforms (default=35 for cepstral form, derault=2 for LSP form)])
+AC_ARG_VAR([MGCBANDWIDTH],[band width for MGC transforms (default=50 for cepstral form, derault=2 for LSP form)])
 AC_ARG_VAR([LF0BANDWIDTH],[band width for log F0 transforms (default=1)])
 AC_ARG_VAR([BAPBANDWIDTH],[band width for band aperiodicity transforms (default=25)])
 
