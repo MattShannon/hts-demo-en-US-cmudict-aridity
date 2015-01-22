@@ -6,10 +6,6 @@
 # This file is part of hts-demo-en-US-cmudict-aridity.
 # See `License` for details of license and warranty.
 
-# setting
-SPEAKER = @SPEAKER@
-DATASET = @DATASET@
-
 # awk and perl
 AWK  = @AWK@
 PERL = @PERL@
@@ -265,10 +261,10 @@ lab:
 mlf:
 	# Generating monophone and fullcontext Master Label Files (MLF)
 	echo "#!MLF!#" > labels/mono.mlf
-	echo "\"*/$(DATASET)_$(SPEAKER)_*.lab\" -> \"@PWD@/data/labels/mono\"" >> labels/mono.mlf
+	echo "\"*/*.lab\" -> \"`pwd -P`/labels/mono\"" >> labels/mono.mlf
 
 	echo "#!MLF!#" > labels/full.mlf
-	echo "\"*/$(DATASET)_$(SPEAKER)_*.lab\" -> \"@PWD@/data/labels/full\"" >> labels/full.mlf
+	echo "\"*/*.lab\" -> \"`pwd -P`/data/labels/full\"" >> labels/full.mlf
 
 list:
 	# Generating a fullcontext model list file
