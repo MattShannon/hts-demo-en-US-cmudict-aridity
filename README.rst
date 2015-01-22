@@ -35,7 +35,9 @@ This repository contains modifications from the official version of the
 US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_.
 Some majorish differences include:
 
-- it computes test set log probability on a specified test corpus
+- it computes test set log probability on a specified test corpus.
+  By default 50 utterances out of a total of 1132 CMU ARCTIC utterances are used
+  for the test corpus, leaving a total of 1082 utterances in the training corpus.
 - changes to the default values of some ``configure`` variables:
 
   - use STRAIGHT vocoder by default (USESTRAIGHT)
