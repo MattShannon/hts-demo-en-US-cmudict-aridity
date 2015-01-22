@@ -36,6 +36,10 @@ US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_.
 Some majorish differences include:
 
 - it computes test set log probability on a specified test corpus
+- changes to the default values of some ``configure`` variables:
+  - use STRAIGHT vocoder by default (USESTRAIGHT)
+  - use 50 mceps (instead of 35) by default (MGCORDER)
+  - don't use modulation spectrum-based generation by default (USEMSPF)
 
 Some minor differences include:
 
@@ -58,7 +62,13 @@ Some minor differences include:
   given directory
 - for the generation corpus, it generates from text or utterances files rather
   than from pre-specified label files
-- a bit more information is written to the log file during decision tree clustering
+- clustering of all streams is performed throughout, whereas the official version
+  disables clustering of the ``bap`` stream for the first of the two clusterings
+  (this is done because it saves disk space and allows intermediate models to be
+  used for synthesis)
+- a bit more information is written to the log file during decision tree
+  clustering, and a bit less during global variance generation
+- untied models are removed after use, saving disk space
 - various minor fixes and changes
 
 License
