@@ -2403,7 +2403,6 @@ sub gen_wave($$) {
          printf SYN "fclose(fid1);\n";
          printf SYN "fclose(fid2);\n";
          printf SYN "fclose(fid3);\n";
-         printf SYN "sp = sp*(" . ( 1024.0 / ( 2200.0 * 32768.0 ) ) . ");\n";    # normalization for STRAIGHT (sdev of amplitude is set to 1024)
          printf SYN "[sy] = exstraightsynth(f0,sp,ap,%d,prm);\n", $sr;
          printf SYN "wavwrite( sy, %d, '%s');\n\n", $sr, "$gendir/$uttId.wav";
          printf SYN "quit;\n";

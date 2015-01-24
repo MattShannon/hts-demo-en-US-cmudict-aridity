@@ -49,6 +49,13 @@ Some majorish differences include:
   - use an MDL tuning factor of 0.6 for mgc stream (instead of 1.0) by default
     (may result in better quality speech)
 
+- the official version applies a simple form of energy normalization to waveforms
+  in the training corpus (when STRAIGHT is used).
+  This is disabled in this repository.
+  If energy normalization is desired then it can be performed as a pre-processing
+  step, for example using the ``sv56demo`` tool included in the collection of
+  `ITU G.191 software tools <http://www.itu.int/rec/T-REC-G.191-201003-I/en>`_.
+
 Some minor differences include:
 
 - it does not include a corpus of text data and speech data for training the

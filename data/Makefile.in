@@ -28,7 +28,6 @@ RAW2WAV = @RAW2WAV@
 USESTRAIGHT = @USESTRAIGHT@
 MATLAB      = @MATLAB@
 STRAIGHT    = @STRAIGHT@
-STRMAGIC    = 72089600   # magic number for turning off normalization (72089600 = 2200 * 32768)
 
 # Festival commands
 USEUTT    = @USEUTT@
@@ -100,7 +99,6 @@ features:
 				fi; \
 			else \
 				FRAMESHIFTMS=`echo $(FRAMESHIFT) | $(X2X) +af | $(SOPR) -m 1000 -d $(SAMPFREQ) | $(X2X) +fa`; \
-				NONORMRATE=`$(X2X) +sf raw/$${uttId}.raw | $(VSTAT) -d -o 2 | $(SOPR) -SQRT -INV -m $(STRMAGIC) | $(X2X) +fa`; \
 				$(RAW2WAV) -s $${SAMPKHZ} -d . raw/$${uttId}.raw; \
 				echo "path(path,'$(STRAIGHT)');"                    >  $${uttId}.m; \
 				echo "prm.F0frameUpdateInterval=$${FRAMESHIFTMS};"  >> $${uttId}.m; \
@@ -112,7 +110,6 @@ features:
 				echo "[sp] = exstraightspec(x,f0,fs,prm);"          >> $${uttId}.m; \
 				echo "ap = ap';"                                    >> $${uttId}.m; \
 				echo "sp = sp';"                                    >> $${uttId}.m; \
-				echo "sp = sp*$${NONORMRATE};"                      >> $${uttId}.m; \
 				echo "save '$${uttId}.f0' f0 -ascii;"               >> $${uttId}.m; \
 				echo "save '$${uttId}.ap' ap -ascii;"               >> $${uttId}.m; \
 				echo "save '$${uttId}.sp' sp -ascii;"               >> $${uttId}.m; \
