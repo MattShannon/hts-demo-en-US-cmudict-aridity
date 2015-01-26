@@ -35,9 +35,6 @@ This repository contains modifications from the official version of the
 US English `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_.
 Some majorish differences include:
 
-- it computes test set log probability on a specified test corpus.
-  By default 50 utterances out of a total of 1132 CMU ARCTIC utterances are used
-  for the test corpus, leaving a total of 1082 utterances in the training corpus.
 - changes to the default values of some ``configure`` variables:
 
   - use STRAIGHT vocoder by default (USESTRAIGHT)
@@ -55,6 +52,9 @@ Some majorish differences include:
   If energy normalization is desired then it can be performed as a pre-processing
   step, for example using the ``sv56demo`` tool included in the collection of
   `ITU G.191 software tools <http://www.itu.int/rec/T-REC-G.191-201003-I/en>`_.
+- it computes test set log probability on a specified test corpus.
+  By default 50 utterances out of a total of 1132 CMU ARCTIC utterances are used
+  for the test corpus, leaving a total of 1082 utterances in the training corpus.
 
 Some minor differences include:
 
