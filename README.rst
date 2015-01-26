@@ -46,12 +46,11 @@ Some majorish differences include:
   - use an MDL tuning factor of 0.6 for mgc stream (instead of 1.0) by default
     (may result in better quality speech)
 
-- the official version applies a simple form of energy normalization to waveforms
-  in the training corpus (when STRAIGHT is used).
-  This is disabled in this repository.
-  If energy normalization is desired then it can be performed as a pre-processing
-  step, for example using the ``sv56demo`` tool included in the collection of
-  `ITU G.191 software tools <http://www.itu.int/rec/T-REC-G.191-201003-I/en>`_.
+- the simple form of energy normalization applied to training waveforms (when
+  STRAIGHT is used) in the official version of the HTS demo is disabled in this
+  repository.
+  See below for suggested instructions of how to perform energy normalization of
+  training waveforms if desired.
 - it computes test set log probability on a specified test corpus.
   By default 50 utterances out of a total of 1132 CMU ARCTIC utterances are used
   for the test corpus, leaving a total of 1082 utterances in the training corpus.
@@ -157,6 +156,14 @@ phoneme set and the default fullcontext label format:
   which use the ``cmudict`` phoneme set
 - if USEUTT is 1, process the text data into festival utterance files using one
   of the festival voices which use the ``cmudict`` phoneme set
+- optionally apply energy normalization to the audio data, for example using the
+  ``sv56demo`` tool included in the collection of
+  `ITU G.191 software tools <http://www.itu.int/rec/T-REC-G.191-201003-I/en>`_.
+  Synthesized waveforms may momentarily have signal values outside the range
+  encountered in the training corpus.
+  Care should therefore be taken to ensure that the training waveforms have
+  sufficient headroom that a non-pathological synthesized voice is unlikely to
+  clip (e.g. by passing ``-lev -24`` to ``sv56demo``).
 - process the audio data into the raw 48 kHz 16-bit format required (e.g. using
   sox followed by SPTK's ``wav2raw`` command)
 - change the list of training corpus utterance ids in ``data/corpus-train.lst``
