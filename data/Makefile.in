@@ -59,18 +59,31 @@ NBAPWIN = @NBAPWIN@
 
 all: corpus-train.lst corpus-test.lst corpus-gen.lst analysis labels
 
-analysis: features cmp
+analysis: check-wav features cmp
 
 labels: lab mlf list scp
+
+check-wav:
+	# Check wave files are reasonable
+	cat corpus-train.lst corpus-test.lst | while read uttId; do \
+		if [ ! -f raw/$$uttId.raw ]; then \
+			echo "ERROR: file raw/$$uttId.raw does not exist" 1>&2; \
+			exit 1; \
+		fi; \
+		min=`$(X2X) +sf raw/$$uttId.raw | $(MINMAX) | $(X2X) +fa | head -n 1`; \
+		max=`$(X2X) +sf raw/$$uttId.raw | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
+		if [ $$min -le -32768 -o $$max -ge 32767 ]; then \
+			echo "ERROR: file raw/$$uttId.raw is clipped" 1>&2; \
+			exit 1; \
+		fi; \
+	done
 
 features:
 	# Extracting features from raw audio
 	mkdir -p mgc lf0 bap
 	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
-		min=`$(X2X) +sf raw/$${uttId}.raw | $(MINMAX) | $(X2X) +fa | head -n 1`; \
-		max=`$(X2X) +sf raw/$${uttId}.raw | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
-		if [ -s raw/$${uttId}.raw -a $${min} -gt -32768 -a $${max} -lt 32767 ]; then \
+		if true; then \
 			echo "Extracting features from raw/$${uttId}.raw"; \
 			if [ $(USESTRAIGHT) -eq 0 ]; then \
 				$(X2X) +sf raw/$${uttId}.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > lf0/$${uttId}.lf0; \
