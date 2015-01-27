@@ -153,14 +153,8 @@ phoneme set and the default fullcontext label format:
 - decide on a split of your corpus into a training corpus and a test corpus and
   put appropriate lists of utterance ids in ``data/corpus-train.lst`` and
   ``data/corpus-test.lst``.
-  For example ``data/corpus-train.lst`` might contain::
-
-        cmu_us_arctic_slt_a0001
-        cmu_us_arctic_slt_a0002
-        cmu_us_arctic_slt_a0004
-        ...
-
-  for the CMU ARCTIC corpus.
+  See ``example/data`` for an example of these files for the CMU ARCTIC corpus
+  for speaker SLT.
   The test corpus is used to compute objective metrics such as test set log
   probability (and can be empty if desired).
 - take a subset of utterance ids from the test corpus as the generation corpus
