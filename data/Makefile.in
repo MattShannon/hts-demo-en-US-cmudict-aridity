@@ -37,7 +37,7 @@ TEXT2UTT  = @TEXT2UTT@
 DUMPFEATS = @DUMPFEATS@
 
 # speech analysis conditions
-SAMPFREQ   = @SAMPFREQ@   # Sampling frequency (48kHz)
+SAMPFREQ   = @SAMPFREQ@
 FRAMELEN   = @FRAMELEN@   # Frame length in point (1200 = 48000 * 0.025)
 FRAMESHIFT = @FRAMESHIFT@ # Frame shift in point (240 = 48000 * 0.005)
 WINDOWTYPE = @WINDOWTYPE@ # Window type -> 0: Blackman 1: Hamming 2: Hanning

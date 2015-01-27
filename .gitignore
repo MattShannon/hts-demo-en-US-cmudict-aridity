@@ -7,7 +7,7 @@ Makefile
 scripts/Config.pm
 
 data/utts
-data/raw
+data/wav
 data/mgc
 data/lf0
 data/bap
