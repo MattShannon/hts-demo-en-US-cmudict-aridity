@@ -1255,13 +1255,13 @@ sub make_data_gv {
                if ( $find == 0 ) {
                   $start = int( $arr[0] * ( 1.0e-7 / ( $fs / $sr ) ) );
                   $end   = int( $arr[1] * ( 1.0e-7 / ( $fs / $sr ) ) );
-                  shell("$BCUT -s $start -e $end -l $ordr{$type} < $datdir/$type/$base.$type >> $gvdatdir/tmp.$type");
+                  shell("$BCUT -s $start -e $end -l $ordr{$type} < $datdir/speech_params/$base.$type >> $gvdatdir/tmp.$type");
                }
             }
             close(F);
          }
          else {
-            shell("cp $datdir/$type/$base.$type $gvdatdir/tmp.$type");
+            shell("cp $datdir/speech_params/$base.$type $gvdatdir/tmp.$type");
          }
          if ( $msdi{$type} == 0 ) {
             shell("cat      $gvdatdir/tmp.$type                              | $VSTAT -d -l $ordr{$type} -o 2 >> $gvdatdir/tmp.cmp");
@@ -2630,7 +2630,7 @@ sub make_mspf($) {
          foreach $mspftype ( 'nat', $gentype ) {
 
             # determine original feature directory
-            if   ( $mspftype eq 'nat' ) { $orgdir = "$datdir/$type"; }
+            if   ( $mspftype eq 'nat' ) { $orgdir = "$datdir/speech_params"; }
             else                        { $orgdir = "$mspfdir/$mspftype"; }
 
             # subtract utterance-level mean
