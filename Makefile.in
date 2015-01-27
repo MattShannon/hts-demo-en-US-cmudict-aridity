@@ -42,23 +42,30 @@
 # POSSIBILITY OF SUCH DAMAGE.                                       #
 # ----------------------------------------------------------------- #
 
+.PHONY: all
 all: data voice
 
+.PHONY: data
 data:
 	@ (cd data ; $(MAKE) all)
 
+.PHONY: voice
 voice:
 	echo "Running a training/synthesis perl script (Training.pl) in background...."
 	@PERL@ scripts/Training.pl scripts/Config.pm > log 2>&1 &
 
+.PHONY: clean
 clean: clean-data clean-voice
 
+.PHONY: clean-data
 clean-data:
 	@ (cd data ; $(MAKE) clean)
 
+.PHONY: clean-voice
 clean-voice:
 	rm -rf models stats edfiles trees fal gv mspf voices gen proto configs
 
+.PHONY: distclean
 distclean: clean
 	@ (cd data; $(MAKE) distclean)
 	rm -f scripts/Config.pm
@@ -66,5 +73,3 @@ distclean: clean
 	rm -f config.log
 	rm -f config.status
 	rm -rf autom4te.cache
-
-.PHONY: data voice clean distclean

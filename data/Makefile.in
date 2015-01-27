@@ -59,13 +59,13 @@ NMGCWIN = @NMGCWIN@
 NLF0WIN = @NLF0WIN@
 NBAPWIN = @NBAPWIN@
 
-all: corpus-train.lst corpus-test.lst corpus-gen.lst analysis labels
+.PHONY: all
+all: cmp labels/mono labels/full lists_etc
 
-analysis: check-wav features cmp
+.PHONY: lists_etc
+lists_etc: labels/mono.mlf labels/full.mlf lists scp
 
-labels: lab mlf list scp
-
-check-wav:
+wav-checked: corpus-train.lst corpus-test.lst wav
 	# Check wav files are reasonable
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
 		if [ ! -f wav/$$uttId.wav ]; then \
@@ -98,21 +98,22 @@ check-wav:
 		fi; \
 		rm -f $$uttId.raw; \
 	done
+	touch wav-checked
 
-features:
-	# Extracting features from wav audio
-	mkdir -p mgc lf0 bap
+speech_params: corpus-train.lst corpus-test.lst wav wav-checked
+	# Extracting speech parameters from wav audio
+	mkdir -p speech_params
 	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
-		echo "Extracting features for utterance $$uttId"; \
+		echo "Extracting speech parameters for utterance $$uttId"; \
 		if [ $(USESTRAIGHT) -eq 0 ]; then \
 			$(WAV2RAW) -d . wav/$$uttId.wav; \
-			$(X2X) +sf $$uttId.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > lf0/$$uttId.lf0; \
+			$(X2X) +sf $$uttId.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > speech_params/$$uttId.lf0; \
 			if [ $(GAMMA) -eq 0 ]; then \
 				$(X2X) +sf $$uttId.raw | \
 				$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
 				$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
-				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 > mgc/$$uttId.mgc; \
+				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 > speech_params/$$uttId.mgc; \
 			else \
 				if [ $(LNGAIN) -eq 1 ]; then \
 					GAINOPT="-L"; \
@@ -123,14 +124,14 @@ features:
 				$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
 				$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
 				$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 -o 4 | \
-				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n $(FFTLEN) -p 8 -d 1.0E-08 > mgc/$$uttId.mgc; \
+				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n $(FFTLEN) -p 8 -d 1.0E-08 > speech_params/$$uttId.mgc; \
 			fi; \
-			if [ -n "`$(NAN) lf0/$$uttId.lf0`" ]; then \
-				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+			if [ -n "`$(NAN) speech_params/$$uttId.lf0`" ]; then \
+				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
-			if [ -n "`$(NAN) mgc/$$uttId.mgc`" ]; then \
-				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+			if [ -n "`$(NAN) speech_params/$$uttId.mgc`" ]; then \
+				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
 			rm -f $$uttId.raw; \
@@ -154,69 +155,68 @@ features:
 			if [ -f $$uttId.f0 -a -f $$uttId.ap -a -f $$uttId.sp ]; then \
 				:; \
 			else \
-				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
-			$(X2X) +af $$uttId.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > lf0/$$uttId.lf0; \
+			$(X2X) +af $$uttId.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > speech_params/$$uttId.lf0; \
 			if [ $(GAMMA) -eq 0 ]; then \
 				$(X2X) +af $$uttId.sp | \
-				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > mgc/$$uttId.mgc; \
+				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > speech_params/$$uttId.mgc; \
 			else \
 				if [ $(LNGAIN) -eq 1 ]; then \
 					GAINOPT="-L"; \
 				fi; \
 				$(X2X) +af $$uttId.sp | \
 				$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 -o 4 | \
-				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 2048 -p 8 -d 1.0E-08 > mgc/$$uttId.mgc; \
+				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 2048 -p 8 -d 1.0E-08 > speech_params/$$uttId.mgc; \
 			fi; \
 			$(X2X) +af $$uttId.ap | \
-			$(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > bap/$$uttId.bap; \
-			if [ -n "`$(NAN) lf0/$$uttId.lf0`" ]; then \
-				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+			$(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > speech_params/$$uttId.bap; \
+			if [ -n "`$(NAN) speech_params/$$uttId.lf0`" ]; then \
+				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
-			if [ -n "`$(NAN) mgc/$$uttId.mgc`" ]; then \
-				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+			if [ -n "`$(NAN) speech_params/$$uttId.mgc`" ]; then \
+				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
-			if [ -n "`$(NAN) bap/$$uttId.bap`" ]; then \
-				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+			if [ -n "`$(NAN) speech_params/$$uttId.bap`" ]; then \
+				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
 			rm -f $$uttId.m $$uttId.raw $$uttId.f0 $$uttId.ap $$uttId.sp; \
 		fi; \
 	done
+	touch speech_params
 
-cmp:
-	# Composing training data files from extracted features
+cmp: corpus-train.lst corpus-test.lst speech_params
+	# Composing training data files from extracted speech parameters
 	mkdir -p cmp
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
-		echo "Composing training data for $${uttId}"; \
+		echo "Composing training data for $$uttId"; \
 		if [ $(USESTRAIGHT) -eq 0 ]; then \
 			MGCDIM=`expr $(MGCORDER) + 1`; \
 			LF0DIM=1; \
 			MGCWINDIM=`expr $(NMGCWIN) \* $${MGCDIM}`; \
 			LF0WINDIM=`expr $(NLF0WIN) \* $${LF0DIM}`; \
 			BYTEPERFRAME=`expr 4 \* \( $${MGCWINDIM} + $${LF0WINDIM} \)`; \
-			if [ -s mgc/$${uttId}.mgc -a -s lf0/$${uttId}.lf0 ]; then \
-				MGCWINS=""; \
-				i=1; \
-				while [ $${i} -le $(NMGCWIN) ]; do \
-					eval MGCWINS=\"$${MGCWINS} $(MGCWIN)$${i}\"; \
-					i=`expr $${i} + 1`; \
-				done; \
-				$(PERL) scripts/window.pl $${MGCDIM} mgc/$${uttId}.mgc $${MGCWINS} > tmp.mgc; \
-				LF0WINS=""; \
-				i=1; \
-				while [ $${i} -le $(NLF0WIN) ]; do \
-					eval LF0WINS=\"$${LF0WINS} $(LF0WIN)$${i}\"; \
-					i=`expr $${i} + 1`; \
-				done; \
-				$(PERL) scripts/window.pl $${LF0DIM} lf0/$${uttId}.lf0 $${LF0WINS} > tmp.lf0; \
-				$(MERGE) +f -s 0 -l $${LF0WINDIM} -L $${MGCWINDIM} tmp.mgc < tmp.lf0                 > tmp.cmp; \
-				$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 tmp.cmp > cmp/$${uttId}.cmp; \
-				rm -f tmp.mgc tmp.lf0 tmp.cmp; \
-			fi; \
+			MGCWINS=""; \
+			i=1; \
+			while [ $${i} -le $(NMGCWIN) ]; do \
+				eval MGCWINS=\"$${MGCWINS} $(MGCWIN)$${i}\"; \
+				i=`expr $${i} + 1`; \
+			done; \
+			$(PERL) scripts/window.pl $${MGCDIM} speech_params/$$uttId.mgc $${MGCWINS} > $$uttId-tmp.mgc; \
+			LF0WINS=""; \
+			i=1; \
+			while [ $${i} -le $(NLF0WIN) ]; do \
+				eval LF0WINS=\"$${LF0WINS} $(LF0WIN)$${i}\"; \
+				i=`expr $${i} + 1`; \
+			done; \
+			$(PERL) scripts/window.pl $${LF0DIM} speech_params/$$uttId.lf0 $${LF0WINS} > $$uttId-tmp.lf0; \
+			$(MERGE) +f -s 0 -l $${LF0WINDIM} -L $${MGCWINDIM} $$uttId-tmp.mgc < $$uttId-tmp.lf0 > $$uttId-tmp.cmp; \
+			$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 $$uttId-tmp.cmp > cmp/$$uttId.cmp; \
+			rm -f $$uttId-tmp.mgc $$uttId-tmp.lf0 $$uttId-tmp.cmp; \
 		else \
 			MGCDIM=`expr $(MGCORDER) + 1`; \
 			LF0DIM=1; \
@@ -226,129 +226,139 @@ cmp:
 			BAPWINDIM=`expr $(NBAPWIN) \* $${BAPDIM}`; \
 			MGCLF0WINDIM=`expr $${MGCWINDIM} + $${LF0WINDIM}`; \
 			BYTEPERFRAME=`expr 4 \* \( $${MGCWINDIM} + $${LF0WINDIM} + $${BAPWINDIM} \)`; \
-			if [ -s mgc/$${uttId}.mgc -a -s lf0/$${uttId}.lf0 -a -s bap/$${uttId}.bap ]; then \
-				MGCWINS=""; \
-				i=1; \
-				while [ $${i} -le $(NMGCWIN) ]; do \
-					eval MGCWINS=\"$${MGCWINS} $(MGCWIN)$${i}\"; \
-					i=`expr $${i} + 1`; \
-				done; \
-				$(PERL) scripts/window.pl $${MGCDIM} mgc/$${uttId}.mgc $${MGCWINS} > tmp.mgc; \
-				LF0WINS=""; \
-				i=1; \
-				while [ $${i} -le $(NLF0WIN) ]; do \
-					eval LF0WINS=\"$${LF0WINS} $(LF0WIN)$${i}\"; \
-					i=`expr $${i} + 1`; \
-				done; \
-				$(PERL) scripts/window.pl $${LF0DIM} lf0/$${uttId}.lf0 $${LF0WINS} > tmp.lf0; \
-				BAPWINS=""; \
-				i=1; \
-				while [ $${i} -le $(NBAPWIN) ]; do \
-					eval BAPWINS=\"$${BAPWINS} $(BAPWIN)$${i}\"; \
-					i=`expr $${i} + 1`; \
-				done; \
-				$(PERL) scripts/window.pl $${BAPDIM} bap/$${uttId}.bap $${BAPWINS} > tmp.bap; \
-				$(MERGE) +f -s 0 -l $${LF0WINDIM} -L $${MGCWINDIM}    tmp.mgc     < tmp.lf0          > tmp.mgc+lf0; \
-				$(MERGE) +f -s 0 -l $${BAPWINDIM} -L $${MGCLF0WINDIM} tmp.mgc+lf0 < tmp.bap          > tmp.cmp; \
-				$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 tmp.cmp > cmp/$${uttId}.cmp; \
-				rm -f tmp.mgc tmp.lf0 tmp.bap tmp.mgc+lf0 tmp.cmp; \
-			fi; \
+			MGCWINS=""; \
+			i=1; \
+			while [ $${i} -le $(NMGCWIN) ]; do \
+				eval MGCWINS=\"$${MGCWINS} $(MGCWIN)$${i}\"; \
+				i=`expr $${i} + 1`; \
+			done; \
+			$(PERL) scripts/window.pl $${MGCDIM} speech_params/$$uttId.mgc $${MGCWINS} > $$uttId-tmp.mgc; \
+			LF0WINS=""; \
+			i=1; \
+			while [ $${i} -le $(NLF0WIN) ]; do \
+				eval LF0WINS=\"$${LF0WINS} $(LF0WIN)$${i}\"; \
+				i=`expr $${i} + 1`; \
+			done; \
+			$(PERL) scripts/window.pl $${LF0DIM} speech_params/$$uttId.lf0 $${LF0WINS} > $$uttId-tmp.lf0; \
+			BAPWINS=""; \
+			i=1; \
+			while [ $${i} -le $(NBAPWIN) ]; do \
+				eval BAPWINS=\"$${BAPWINS} $(BAPWIN)$${i}\"; \
+				i=`expr $${i} + 1`; \
+			done; \
+			$(PERL) scripts/window.pl $${BAPDIM} speech_params/$$uttId.bap $${BAPWINS} > $$uttId-tmp.bap; \
+			$(MERGE) +f -s 0 -l $${LF0WINDIM} -L $${MGCWINDIM}    $$uttId-tmp.mgc     < $$uttId-tmp.lf0  > $$uttId-tmp.mgc+lf0; \
+			$(MERGE) +f -s 0 -l $${BAPWINDIM} -L $${MGCLF0WINDIM} $$uttId-tmp.mgc+lf0 < $$uttId-tmp.bap  > $$uttId-tmp.cmp; \
+			$(PERL) scripts/addhtkheader.pl $(SAMPFREQ) $(FRAMESHIFT) $${BYTEPERFRAME} 9 $$uttId-tmp.cmp > cmp/$$uttId.cmp; \
+			rm -f $$uttId-tmp.mgc $$uttId-tmp.lf0 $$uttId-tmp.bap $$uttId-tmp.mgc+lf0 $$uttId-tmp.cmp; \
 		fi; \
 	done
+	touch cmp
 
-lab:
-	# Extracting monophone and fullcontext labels
+ifeq ($(USEUTT), 0)
+utts: corpus-train.lst corpus-test.lst corpus-gen.lst txt
+	# txt-to-utt step
+	mkdir -p utts
+	cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
+		if [ ! -f txt/$$uttId.txt ]; then \
+			echo "ERROR: file does not exist: txt/$$uttId.txt" 1>&2; \
+			exit 1; \
+		fi; \
+		echo "Performing txt-to-utt for utterance $$uttId"; \
+		$(PERL) scripts/normtext.pl txt/$$uttId.txt > $$uttId-tmp.txt; \
+		$(TEXT2UTT) $$uttId-tmp.txt > utts/$$uttId.utt; \
+		rm -f $$uttId-tmp.txt; \
+		if [ ! -f utts/$$uttId.utt ]; then \
+			echo "ERROR: txt-to-utt failed for utterance $$uttId" 1>&2; \
+			exit 1; \
+		fi; \
+	done
+	touch utts
+endif
+
+labels/mono labels/full: corpus-train.lst corpus-test.lst corpus-gen.lst utts
+	# utt-to-lab step
 	mkdir -p labels/mono
 	mkdir -p labels/full
-	if [ $(USEUTT) -eq 1 ]; then \
-		cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
-			if [ -s utts/$${uttId}.utt ]; then \
-				echo "Extracting labels from utts/$${uttId}.utt"; \
-				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats utts/$${uttId}.utt; \
-			fi; \
-			if [ -s tmp.feats ]; then \
-				$(AWK) -f scripts/label-full.awk tmp.feats > labels/full/$${uttId}.lab; \
-				$(AWK) -f scripts/label-mono.awk tmp.feats > labels/mono/$${uttId}.lab; \
-				rm -f tmp.feats; \
-			fi; \
-		done; \
-	else \
-		mkdir -p utts; \
-		cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
-			if [ -s txt/$${uttId}.txt ]; then \
-				echo "Extracting labels from txt/$${uttId}.txt"; \
-				$(PERL) scripts/normtext.pl txt/$${uttId}.txt > tmp.txt; \
-				$(TEXT2UTT) tmp.txt > utts/$${uttId}.utt; \
-				$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output tmp.feats utts/$${uttId}.utt; \
-				rm -f tmp.txt; \
-			fi; \
-			if [ -s tmp.feats ]; then \
-				$(AWK) -f scripts/label-full.awk tmp.feats > labels/full/$${uttId}.lab; \
-				$(AWK) -f scripts/label-mono.awk tmp.feats > labels/mono/$${uttId}.lab; \
-				rm -f tmp.feats; \
-			fi; \
-		done; \
-	fi
+	cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
+		if [ ! -f utts/$$uttId.utt ]; then \
+			echo "ERROR: file does not exist: utts/$$uttId.utt" 1>&2; \
+			exit 1; \
+		fi; \
+		echo "Performing utt-to-lab for utterance $$uttId"; \
+		$(DUMPFEATS) -eval scripts/extra_feats.scm -relation Segment -feats scripts/label.feats -output $$uttId-tmp.feats utts/$$uttId.utt; \
+		if [ ! -f $$uttId-tmp.feats ]; then \
+			echo "ERROR: utt-to-lab failed for utterance $$uttId" 1>&2; \
+			exit 1; \
+		fi; \
+		$(AWK) -f scripts/label-full.awk $$uttId-tmp.feats > labels/full/$$uttId.lab; \
+		$(AWK) -f scripts/label-mono.awk $$uttId-tmp.feats > labels/mono/$$uttId.lab; \
+		if [ -f labels/mono/$$uttId.lab -a -f labels/full/$$uttId.lab ]; then \
+			:; \
+		else \
+			echo "ERROR: utt-to-lab failed for utterance $$uttId" 1>&2; \
+			exit 1; \
+		fi; \
+		rm -f $$uttId-tmp.feats; \
+	done
+	touch labels/mono
+	touch labels/full
 
-mlf:
+labels/mono.mlf labels/full.mlf:
 	# Generating monophone and fullcontext Master Label Files (MLF)
+	mkdir -p labels
+
 	echo "#!MLF!#" > labels/mono.mlf
 	echo "\"*/*.lab\" -> \"`pwd -P`/labels/mono\"" >> labels/mono.mlf
 
 	echo "#!MLF!#" > labels/full.mlf
 	echo "\"*/*.lab\" -> \"`pwd -P`/labels/full\"" >> labels/full.mlf
 
-list:
+lists: corpus-train.lst corpus-test.lst corpus-gen.lst labels/mono labels/full
 	# Generating a fullcontext model list file
 	mkdir -p lists
 
-	rm -f tmp
+	rm -f tmp-full-segments
 	cat corpus-train.lst | while read uttId; do \
-		if [ -s labels/full/$${uttId}.lab -a -s labels/mono/$${uttId}.lab -a -s cmp/$${uttId}.cmp ]; then \
-			sed -e "s/.* //g" labels/full/$${uttId}.lab >> tmp; \
-		fi \
+		sed -e "s/.* //g" labels/full/$$uttId.lab >> tmp-full-segments; \
 	done
-	sort -u tmp > lists/full.list
-	rm -f tmp
+	sort -u tmp-full-segments > lists/full.list
+	rm -f tmp-full-segments
 
 	# Generating a fullcontext model list file which includes unseen models
-	rm -f tmp
-	cat lists/full.list > tmp
-	cat corpus-train.lst corpus-test.lst corpus-gen.lst | while read uttId; do \
-		sed -e "s/.* //g" labels/full/$${uttId}.lab >> tmp; \
+	rm -f tmp-full-all-segments
+	cat lists/full.list > tmp-full-all-segments
+	cat corpus-test.lst corpus-gen.lst | while read uttId; do \
+		sed -e "s/.* //g" labels/full/$$uttId.lab >> tmp-full-all-segments; \
 	done
-	sort -u tmp > lists/full_all.list
-	rm -f tmp
+	sort -u tmp-full-all-segments > lists/full_all.list
+	rm -f tmp-full-all-segments
 
 	# Generating a monophone list file
-	rm -f tmp
+	rm -f tmp-mono-segments
 	cat corpus-train.lst | while read uttId; do \
-		if [ -s labels/mono/$${uttId}.lab -a -s labels/full/$${uttId}.lab -a -s cmp/$${uttId}.cmp ]; then \
-			sed -e "s/.* //g" labels/mono/$${uttId}.lab >> tmp; \
-		fi \
+		sed -e "s/.* //g" labels/mono/$$uttId.lab >> tmp-mono-segments; \
 	done
-	sort -u tmp > lists/mono.list
-	rm -f tmp
+	sort -u tmp-mono-segments > lists/mono.list
+	rm -f tmp-mono-segments
 
-scp:
+	touch lists
+
+scp: corpus-train.lst corpus-test.lst corpus-gen.lst
 	# Generating a training data script
 	mkdir -p scp
 
 	rm -f scp/train.scp
 	touch scp/train.scp
 	cat corpus-train.lst | while read uttId; do \
-		if [ -s cmp/$${uttId}.cmp -a -s labels/mono/$${uttId}.lab -a -s labels/full/$${uttId}.lab ]; then \
-			echo "`pwd -P`"/cmp/$${uttId}.cmp >> scp/train.scp; \
-		fi \
+		echo "`pwd -P`"/cmp/$$uttId.cmp >> scp/train.scp; \
 	done
 
 	# Generating a test corpus data script
 	rm -f scp/test.scp
 	touch scp/test.scp
 	cat corpus-test.lst | while read uttId; do \
-		if [ -s cmp/$${uttId}.cmp -a -s labels/full/$${uttId}.lab ]; then \
-			echo "`pwd -P`"/cmp/$${uttId}.cmp >> scp/test.scp; \
-		fi \
+		echo "`pwd -P`"/cmp/$$uttId.cmp >> scp/test.scp; \
 	done
 
 	cat scp/train.scp scp/test.scp > scp/train-test.scp
@@ -357,38 +367,43 @@ scp:
 	rm -f scp/gen.scp
 	touch scp/gen.scp
 	cat corpus-gen.lst | while read uttId; do \
-		echo "`pwd -P`"/labels/full/$${uttId}.lab >> scp/gen.scp; \
+		echo "`pwd -P`"/labels/full/$$uttId.lab >> scp/gen.scp; \
 	done
 
+	touch scp
 
-clean: clean-mgc clean-lf0 clean-bap clean-cmp clean-lab clean-mlf clean-list clean-scp
+.PHONY: clean
+clean: clean-speech_params clean-cmp clean-labels clean-lists clean-scp
+ifeq ($(USEUTT), 0)
+clean: clean-utts
+endif
 
-clean-mgc:
-	rm -rf mgc
+.PHONY: clean-speech_params
+clean-speech_params:
+	rm -rf speech_params
 
-clean-lf0:
-	rm -rf lf0
-
-clean-bap:
-	rm -rf bap
-
+.PHONY: clean-cmp
 clean-cmp:
 	rm -rf cmp
 
-clean-lab:
-	rm -rf labels/mono
-	rm -rf labels/full
+ifeq ($(USEUTT), 0)
+.PHONY: clean-utts
+clean-utts:
+	rm -rf utts
+endif
 
-clean-mlf:
-	rm -f labels/*.mlf
+.PHONY: clean-labels
+clean-labels:
+	rm -rf labels
 
-clean-list:
+.PHONY: clean-lists
+clean-lists:
 	rm -rf lists
 
+.PHONY: clean-scp
 clean-scp:
 	rm -rf scp
 
+.PHONY: distclean
 distclean: clean
 	rm -f Makefile
-
-.PHONY: all analysis features cmp labels lab mlf list scp clean distclean
