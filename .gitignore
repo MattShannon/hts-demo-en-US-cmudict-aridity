@@ -6,15 +6,21 @@ data/Makefile
 Makefile
 scripts/Config.pm
 
+data/corpus-train.lst
+data/corpus-test.lst
+data/corpus-gen.lst
+data/txt
 data/utts
 data/wav
+data/wav_checked
 data/mgc
 data/lf0
 data/bap
 data/cmp
 data/labels/mono
 data/labels/full
-data/labels/*.mlf
+data/labels/mono.mlf
+data/labels/full.mlf
 data/lists
 data/scp
 

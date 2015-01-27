@@ -65,7 +65,7 @@ all: cmp labels/mono labels/full lists_etc
 .PHONY: lists_etc
 lists_etc: labels/mono.mlf labels/full.mlf lists scp
 
-wav-checked: corpus-train.lst corpus-test.lst wav
+wav_checked: corpus-train.lst corpus-test.lst wav
 	# Check wav files are reasonable
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
 		if [ ! -f wav/$$uttId.wav ]; then \
@@ -98,9 +98,9 @@ wav-checked: corpus-train.lst corpus-test.lst wav
 		fi; \
 		rm -f $$uttId.raw; \
 	done
-	touch wav-checked
+	touch wav_checked
 
-speech_params: corpus-train.lst corpus-test.lst wav wav-checked
+speech_params: corpus-train.lst corpus-test.lst wav wav_checked
 	# Extracting speech parameters from wav audio
 	mkdir -p speech_params
 	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
