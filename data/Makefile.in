@@ -7,8 +7,9 @@
 # See `License` for details of license and warranty.
 
 # awk and perl
-AWK  = @AWK@
+AWK = @AWK@
 PERL = @PERL@
+PYTHON = @PYTHON@
 
 # SPTK commands
 X2X     = @X2X@
@@ -23,6 +24,7 @@ PITCH   = @PITCH@
 FRAME   = @FRAME@
 WINDOW  = @WINDOW@
 RAW2WAV = @RAW2WAV@
+WAV2RAW = @WAV2RAW@
 
 # MATLAB and STRAIGHT
 USESTRAIGHT = @USESTRAIGHT@
@@ -64,104 +66,124 @@ analysis: check-wav features cmp
 labels: lab mlf list scp
 
 check-wav:
-	# Check wave files are reasonable
+	# Check wav files are reasonable
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
-		if [ ! -f raw/$$uttId.raw ]; then \
-			echo "ERROR: file raw/$$uttId.raw does not exist" 1>&2; \
+		if [ ! -f wav/$$uttId.wav ]; then \
+			echo "ERROR: file does not exist: wav/$$uttId.wav" 1>&2; \
 			exit 1; \
 		fi; \
-		min=`$(X2X) +sf raw/$$uttId.raw | $(MINMAX) | $(X2X) +fa | head -n 1`; \
-		max=`$(X2X) +sf raw/$$uttId.raw | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
+		wavInfo=`$(PYTHON) scripts/print_wav_info.py wav/$$uttId.wav`; \
+		if [ ! "`echo "$$wavInfo" | grep -F -x 'num channels = 1'`" ]; then \
+			echo "ERROR: wav file should have 1 channel: wav/$$uttId.wav" 1>&2; \
+			exit 1; \
+		fi; \
+		if [ ! "`echo "$$wavInfo" | grep -F -x 'bit depth = 16'`" ]; then \
+			echo "ERROR: wav file should be 16-bit: wav/$$uttId.wav" 1>&2; \
+			exit 1; \
+		fi; \
+		if [ ! "`echo "$$wavInfo" | grep -F -x 'sampling frequency = $(SAMPFREQ)'`" ]; then \
+			echo "ERROR: wav file should have sampling frequency $(SAMPFREQ): wav/$$uttId.wav" 1>&2; \
+			exit 1; \
+		fi; \
+		if [ ! "`echo "$$wavInfo" | grep -F -x 'compression = NONE'`" ]; then \
+			echo "ERROR: wav file should not use compression: wav/$$uttId.wav" 1>&2; \
+			exit 1; \
+		fi; \
+		$(WAV2RAW) -d . wav/$$uttId.wav; \
+		min=`$(X2X) +sf $$uttId.raw | $(MINMAX) | $(X2X) +fa | head -n 1`; \
+		max=`$(X2X) +sf $$uttId.raw | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
 		if [ $$min -le -32768 -o $$max -ge 32767 ]; then \
-			echo "ERROR: file raw/$$uttId.raw is clipped" 1>&2; \
+			echo "ERROR: wav file wav/$$uttId.wav suffers from clipping" 1>&2; \
 			exit 1; \
 		fi; \
+		rm -f $$uttId.raw; \
 	done
 
 features:
-	# Extracting features from raw audio
+	# Extracting features from wav audio
 	mkdir -p mgc lf0 bap
 	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
-		if true; then \
-			echo "Extracting features from raw/$${uttId}.raw"; \
-			if [ $(USESTRAIGHT) -eq 0 ]; then \
-				$(X2X) +sf raw/$${uttId}.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > lf0/$${uttId}.lf0; \
-				if [ $(GAMMA) -eq 0 ]; then \
-					$(X2X) +sf raw/$${uttId}.raw | \
-					$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
-					$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
-					$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 > mgc/$${uttId}.mgc; \
-				else \
-					if [ $(LNGAIN) -eq 1 ]; then \
-						GAINOPT="-L"; \
-					fi; \
-					$(X2X) +sf raw/$${uttId}.raw | \
-					$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
-					$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
-					$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 -o 4 | \
-					$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n $(FFTLEN) -p 8 -d 1.0E-08 > mgc/$${uttId}.mgc; \
-				fi; \
-				if [ -n "`$(NAN) lf0/$${uttId}.lf0`" ]; then \
-					echo " Failed to extract features from raw/$${uttId}.raw"; \
-					rm -f lf0/$${uttId}.lf0; \
-				fi; \
-				if [ -n "`$(NAN) mgc/$${uttId}.mgc`" ]; then \
-					echo " Failed to extract features from raw/$${uttId}.raw"; \
-					rm -f mgc/$${uttId}.mgc; \
-				fi; \
+		echo "Extracting features for utterance $$uttId"; \
+		if [ $(USESTRAIGHT) -eq 0 ]; then \
+			$(WAV2RAW) -d . wav/$$uttId.wav; \
+			$(X2X) +sf $$uttId.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > lf0/$$uttId.lf0; \
+			if [ $(GAMMA) -eq 0 ]; then \
+				$(X2X) +sf $$uttId.raw | \
+				$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
+				$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
+				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 > mgc/$$uttId.mgc; \
 			else \
-				FRAMESHIFTMS=`echo $(FRAMESHIFT) | $(X2X) +af | $(SOPR) -m 1000 -d $(SAMPFREQ) | $(X2X) +fa`; \
-				$(RAW2WAV) -s $${SAMPKHZ} -d . raw/$${uttId}.raw; \
-				echo "path(path,'$(STRAIGHT)');"                    >  $${uttId}.m; \
-				echo "prm.F0frameUpdateInterval=$${FRAMESHIFTMS};"  >> $${uttId}.m; \
-				echo "prm.F0searchUpperBound=$(UPPERF0);"           >> $${uttId}.m; \
-				echo "prm.F0searchLowerBound=$(LOWERF0);"           >> $${uttId}.m; \
-				echo "prm.spectralUpdateInterval=$${FRAMESHIFTMS};" >> $${uttId}.m; \
-				echo "[x,fs]=wavread('$${uttId}.wav');"             >> $${uttId}.m; \
-				echo "[f0,ap] = exstraightsource(x,fs,prm);"        >> $${uttId}.m; \
-				echo "[sp] = exstraightspec(x,f0,fs,prm);"          >> $${uttId}.m; \
-				echo "ap = ap';"                                    >> $${uttId}.m; \
-				echo "sp = sp';"                                    >> $${uttId}.m; \
-				echo "save '$${uttId}.f0' f0 -ascii;"               >> $${uttId}.m; \
-				echo "save '$${uttId}.ap' ap -ascii;"               >> $${uttId}.m; \
-				echo "save '$${uttId}.sp' sp -ascii;"               >> $${uttId}.m; \
-				echo "quit;"                                        >> $${uttId}.m; \
-				$(MATLAB) < $${uttId}.m; \
-				if [ -s $${uttId}.f0 ]; then \
-					$(X2X) +af $${uttId}.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > lf0/$${uttId}.lf0; \
-					if [ -n "`$(NAN) lf0/$${uttId}.lf0`" ]; then \
-						echo " Failed to extract features from raw/$${uttId}.raw"; \
-						rm -f lf0/$${uttId}.lf0; \
-					fi; \
+				if [ $(LNGAIN) -eq 1 ]; then \
+					GAINOPT="-L"; \
+				else \
+					GAINOPT=""; \
 				fi; \
-				if [ -s $${uttId}.sp ]; then \
-					if [ $(GAMMA) -eq 0 ]; then \
-						$(X2X) +af $${uttId}.sp | \
-						$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > mgc/$${uttId}.mgc; \
-					else \
-						if [ $(LNGAIN) -eq 1 ]; then \
-							GAINOPT="-L"; \
-						fi; \
-						$(X2X) +af $${uttId}.sp | \
-						$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 -o 4 | \
-						$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 2048 -p 8 -d 1.0E-08 > mgc/$${uttId}.mgc; \
-					fi; \
-					if [ -n "`$(NAN) mgc/$${uttId}.mgc`" ]; then \
-						echo " Failed to extract features from raw/$${uttId}.raw"; \
-						rm -f mgc/$${uttId}.mgc; \
-					fi; \
-				fi; \
-				if [ -s $${uttId}.ap ]; then \
-					$(X2X) +af $${uttId}.ap | \
-					$(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > bap/$${uttId}.bap; \
-					if [ -n "`$(NAN) bap/$${uttId}.bap`" ]; then \
-						echo " Failed to extract features from raw/$${uttId}.raw"; \
-						rm -f bap/$${uttId}.bap; \
-					fi; \
-				fi; \
-				rm -f $${uttId}.m $${uttId}.wav $${uttId}.f0 $${uttId}.ap $${uttId}.sp; \
+				$(X2X) +sf $$uttId.raw | \
+				$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
+				$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
+				$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 -o 4 | \
+				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n $(FFTLEN) -p 8 -d 1.0E-08 > mgc/$$uttId.mgc; \
 			fi; \
+			if [ -n "`$(NAN) lf0/$$uttId.lf0`" ]; then \
+				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+				exit 1; \
+			fi; \
+			if [ -n "`$(NAN) mgc/$$uttId.mgc`" ]; then \
+				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+				exit 1; \
+			fi; \
+			rm -f $$uttId.raw; \
+		else \
+			FRAMESHIFTMS=`echo $(FRAMESHIFT) | $(X2X) +af | $(SOPR) -m 1000 -d $(SAMPFREQ) | $(X2X) +fa`; \
+			echo "path(path,'$(STRAIGHT)');"                    >  $$uttId.m; \
+			echo "prm.F0frameUpdateInterval=$${FRAMESHIFTMS};"  >> $$uttId.m; \
+			echo "prm.F0searchUpperBound=$(UPPERF0);"           >> $$uttId.m; \
+			echo "prm.F0searchLowerBound=$(LOWERF0);"           >> $$uttId.m; \
+			echo "prm.spectralUpdateInterval=$${FRAMESHIFTMS};" >> $$uttId.m; \
+			echo "[x, fs] = wavread('wav/$$uttId.wav');"        >> $$uttId.m; \
+			echo "[f0,ap] = exstraightsource(x,fs,prm);"        >> $$uttId.m; \
+			echo "[sp] = exstraightspec(x,f0,fs,prm);"          >> $$uttId.m; \
+			echo "ap = ap';"                                    >> $$uttId.m; \
+			echo "sp = sp';"                                    >> $$uttId.m; \
+			echo "save '$$uttId.f0' f0 -ascii;"                 >> $$uttId.m; \
+			echo "save '$$uttId.ap' ap -ascii;"                 >> $$uttId.m; \
+			echo "save '$$uttId.sp' sp -ascii;"                 >> $$uttId.m; \
+			echo "quit;"                                        >> $$uttId.m; \
+			$(MATLAB) < $$uttId.m; \
+			if [ -f $$uttId.f0 -a -f $$uttId.ap -a -f $$uttId.sp ]; then \
+				:; \
+			else \
+				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+				exit 1; \
+			fi; \
+			$(X2X) +af $$uttId.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > lf0/$$uttId.lf0; \
+			if [ $(GAMMA) -eq 0 ]; then \
+				$(X2X) +af $$uttId.sp | \
+				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > mgc/$$uttId.mgc; \
+			else \
+				if [ $(LNGAIN) -eq 1 ]; then \
+					GAINOPT="-L"; \
+				fi; \
+				$(X2X) +af $$uttId.sp | \
+				$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 -o 4 | \
+				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 2048 -p 8 -d 1.0E-08 > mgc/$$uttId.mgc; \
+			fi; \
+			$(X2X) +af $$uttId.ap | \
+			$(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > bap/$$uttId.bap; \
+			if [ -n "`$(NAN) lf0/$$uttId.lf0`" ]; then \
+				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+				exit 1; \
+			fi; \
+			if [ -n "`$(NAN) mgc/$$uttId.mgc`" ]; then \
+				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+				exit 1; \
+			fi; \
+			if [ -n "`$(NAN) bap/$$uttId.bap`" ]; then \
+				echo "ERROR: feature extraction failed for utterance $$uttId" 1>&2; \
+				exit 1; \
+			fi; \
+			rm -f $$uttId.m $$uttId.raw $$uttId.f0 $$uttId.ap $$uttId.sp; \
 		fi; \
 	done
 

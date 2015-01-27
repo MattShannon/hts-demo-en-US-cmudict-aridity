@@ -25,8 +25,7 @@ The text data may be provided in one of two forms:
   using the same phoneme set used by the
   `CMU Pronouncing Dictionary <http://www.speech.cs.cmu.edu/cgi-bin/cmudict>`_
 
-The speech data should be provided in the form of raw 48 kHz 16-bit audio files,
-which are essentially just wav files with the header information removed.
+The speech data should be provided in the form of 48 kHz 16-bit mono wav files.
 
 Modifications from the official version
 ---------------------------------------
@@ -51,9 +50,7 @@ Some majorish differences include:
   repository.
   See below for suggested instructions of how to perform energy normalization of
   training waveforms if desired.
-- it computes test set log probability on a specified test corpus.
-  By default 50 utterances out of a total of 1132 CMU ARCTIC utterances are used
-  for the test corpus, leaving a total of 1082 utterances in the training corpus.
+- it computes test set log probability on a specified test corpus
 
 Some minor differences include:
 
@@ -64,6 +61,8 @@ Some minor differences include:
   and may obtained by downloading the official version of the
   US English HTS demo from the
   `HTS demo website <http://hts.sp.nitech.ac.jp/?Download>`_.
+- the speech data should be provided in a wav rather than raw format.
+  If necessary conversion may be done using SPTK's ``raw2wav`` tool.
 - it adds this README file
 - it adds the ``License`` file
 - it removes the ``configure`` script since a suitable script can be automatically
@@ -110,6 +109,8 @@ hts-demo-en-US-cmudict-aridity depends on the following software packages:
 - `hts_engine API <http://hts-engine.sourceforge.net/>`_
   (if synthesis using HTS engine rather than HTS's HMGenS tool is desired)
 
+The versions of these software packages required can be found in ``INSTALL``.
+
 If STRAIGHT vocoding is used (recommended for better quality, though it is not
 available under a permissive license) then the following software packages are
 also required:
@@ -118,63 +119,71 @@ also required:
 - `MATLAB <http://www.mathworks.com/products/matlab/>`_
   (to run the STRAIGHT vocoder)
 
-The versions of these software packages required can be found in ``INSTALL``.
-
 There are two high-level choices that need to be made when setting-up this
 directory:
 
-- whether to provide the text data for the corpus you wish to train on as simple
-  text files (in which case the ``configure`` variable USEUTT should be set to 0)
-  or as Festival utterance files (in which case USEUTT should be set to 1).
+- whether to provide the text data for your desired corpus as simple text files
+  (in which case the ``configure`` variable USEUTT should be set to 0) or as
+  Festival utterance files (in which case USEUTT should be set to 1).
   Using Festival utterance files is the default.
 - whether to use the STRAIGHT vocoder (in which case the ``configure`` variable
   USESTRAIGHT should be set to 1) or the non-STRAIGHT vocoder (in which case
   USESTRAIGHT should be set to 0).
   Using the STRAIGHT vocoder is the default.
 
-To set-up this directory:
-
-- if USEUTT is 0, ensure that the default festival voice produces utterance files
-  which use the ``cmudict`` phoneme set
-- add appropriate text files in ``data/txt`` (if USEUTT is 0), Festival utterance
-  files in ``data/utts`` (if USEUTT is 1) and raw audio files in ``data/raw`` for
-  the corpus you wish to use during training (see above for details of the formats
-  used and details of where to obtain the processed CMU ARCTIC corpus typically
-  used with this HTS demo)
-- generate the ``configure`` script from ``configure.ac`` using ``autoconf``
-- follow the instructions for the official version included in ``INSTALL``,
-  setting the USEUTT and USESTRAIGHT ``configure`` variables appropriately
-
-Changes required for a different corpus
----------------------------------------
-
-To use a new corpus of text and audio data using the
+To set-up this directory for your desired corpus using the
 `CMU Pronouncing Dictionary <http://www.speech.cs.cmu.edu/cgi-bin/cmudict>`_
 phoneme set and the default fullcontext label format:
 
-- if USEUTT is 0, ensure that the default festival voice produces utterance files
-  which use the ``cmudict`` phoneme set
-- if USEUTT is 1, process the text data into festival utterance files using one
-  of the festival voices which use the ``cmudict`` phoneme set
-- optionally apply energy normalization to the audio data, for example using the
-  ``sv56demo`` tool included in the collection of
+- if USEUTT is 0, add text files for your desired corpus in ``data/txt``.
+  Make sure that the default festival voice produces utterance files which use
+  the ``cmudict`` phoneme set.
+- if USEUTT is 1, add Festival utterance files for your desired corpus in
+  ``data/utts``.
+  Make sure that the utterance files use the ``cmudict`` phoneme set.
+- add 48 kHz 16-bit mono wav files for your desired corpus in ``data/wav``
+- optionally, apply energy normalization to the audio data, for example using
+  the ``sv56demo`` tool included in the collection of
   `ITU G.191 software tools <http://www.itu.int/rec/T-REC-G.191-201003-I/en>`_.
   Synthesized waveforms may momentarily have signal values outside the range
   encountered in the training corpus.
   Care should therefore be taken to ensure that the training waveforms have
   sufficient headroom that a non-pathological synthesized voice is unlikely to
   clip (e.g. by passing ``-lev -24`` to ``sv56demo``).
-- process the audio data into the raw 48 kHz 16-bit format required (e.g. using
-  sox followed by SPTK's ``wav2raw`` command)
-- change the list of training corpus utterance ids in ``data/corpus-train.lst``
-  and similarly for the test corpus (``data/corpus-test.lst``) and generation
-  corpus (``data/corpus-gen.lst``)
-- select values of the LOWERF0 and UPPERF0 ``configure`` variables which are
-  appropriate for the F0 range of the speaker
-- optionally you may wish to change the DATASET and SPEAKER ``configure``
-  variables, though these are only used in a handful of non-essential places
-- (then follow the relevant parts of the instructions given in the Installation
-  section)
+- decide on a split of your corpus into a training corpus and a test corpus and
+  put appropriate lists of utterance ids in ``data/corpus-train.lst`` and
+  ``data/corpus-test.lst``.
+  For example ``data/corpus-train.lst`` might contain::
+
+        cmu_us_arctic_slt_a0001
+        cmu_us_arctic_slt_a0002
+        cmu_us_arctic_slt_a0004
+        ...
+
+  for the CMU ARCTIC corpus.
+  The test corpus is used to compute objective metrics such as test set log
+  probability (and can be empty if desired).
+- take a subset of utterance ids from the test corpus as the generation corpus
+  specified in ``data/corpus-gen.lst``.
+  You may also include new utterance ids not present in the training corpus or
+  test corpus, in which case you should add the appropriate text or utterance
+  files to ``data/txt`` or ``data/utts``.
+  The training scripts automatically generate synthetic waveforms for utterances
+  in the generation corpus.
+  There is no need for utterances in the generation corpus to have waveforms in
+  ``data/wav``.
+- generate the ``configure`` script from ``configure.ac`` using ``autoconf``
+- follow the instructions for the official version included in ``INSTALL``,
+  setting the USEUTT and USESTRAIGHT ``configure`` variables appropriately.
+  You may also wish to:
+
+  - set the LOWERF0 and UPPERF0 ``configure`` variables to appropriate values
+    for the F0 range of the speaker
+  - set the DATASET and SPEAKER ``configure`` variables, though these are only
+    used in a handful of non-essential places
+
+Using a different phoneme set
+-----------------------------
 
 Using a different phoneme set or fullcontext label format requires more extensive
 changes, including at least:

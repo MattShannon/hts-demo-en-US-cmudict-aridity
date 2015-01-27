@@ -16,6 +16,12 @@ if test ! -f "$PERL"; then
 	AC_MSG_ERROR(Can't find perl)
 fi
 
+# python
+AC_PATH_PROG([PYTHON], [python], [/usr/bin], [$PATH:/usr/bin])
+if test ! -f "$PYTHON"; then
+	AC_MSG_ERROR(Can't find python)
+fi
+
 # wc
 AC_PATH_PROG([WC], [wc], [/usr/bin], [$PATH:/usr/bin])
 if test ! -f "$WC"; then
@@ -222,6 +228,12 @@ fi
 AC_PATH_PROG([RAW2WAV], [raw2wav], [:], [${sptk_search_path}:$PATH])
 if test ! -f "$RAW2WAV"; then
 	AC_MSG_ERROR(Can't find raw2wav of SPTK)
+fi
+
+# wav2raw
+AC_PATH_PROG([WAV2RAW], [wav2raw], [:], [${sptk_search_path}:$PATH])
+if test ! -f "$WAV2RAW"; then
+	AC_MSG_ERROR(Can't find wav2raw of SPTK)
 fi
 
 # pitch
