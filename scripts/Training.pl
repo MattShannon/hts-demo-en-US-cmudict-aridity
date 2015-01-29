@@ -2358,13 +2358,10 @@ sub gen_wave($$) {
 
          $line = "$EXCITE -n -p $fs $gendir/$uttId.pit | ";
          $line .= "$DFS -b $lfil | $VOPR -a $gendir/$uttId.unv | ";
-         $line .= "$MGLSADF -P 5 -m " . ( $ordr{'mgc'} - 1 ) . " -p $fs -a $fw -c $gm $mgc | ";
-         $line .= "$X2X +fs -o > $gendir/$uttId.raw";
-         shell($line);
-         $line = "$RAW2WAV -s " . ( $sr / 1000 ) . " -d $gendir $gendir/$uttId.raw";
+         $line .= "$MGLSADF -P 5 -m " . ( $ordr{'mgc'} - 1 ) . " -p $fs -a $fw -c $gm $mgc > $gendir/$uttId.x32768.0.raw";
          shell($line);
 
-         $line = "rm -f $gendir/$uttId.pit $gendir/$uttId.unv $gendir/$uttId.raw";
+         $line = "rm -f $gendir/$uttId.pit $gendir/$uttId.unv";
          shell($line);
 
          print "done\n";
@@ -2390,21 +2387,29 @@ sub gen_wave($$) {
 
          # synthesize waveform
          open( SYN, ">$gendir/$uttId.m" ) || die "Cannot open $!";
-         printf SYN "path(path,'%s');\n",                 ${STRAIGHT};
+         printf SYN "path(path, '%s');\n", ${STRAIGHT};
          printf SYN "prm.spectralUpdateInterval = %f;\n", 1000.0 * $fs / $sr;
-         printf SYN "prm.levelNormalizationIndicator = 0;\n\n";
-         printf SYN "fprintf(1,'\\nSynthesizing %s\\n');\n", "$gendir/$uttId.wav";
-         printf SYN "fid1 = fopen('%s','r','%s');\n",        "$gendir/$uttId.sp", "ieee-le";
-         printf SYN "fid2 = fopen('%s','r','%s');\n",        "$gendir/$uttId.ap", "ieee-le";
-         printf SYN "fid3 = fopen('%s','r','%s');\n",        "$gendir/$uttId.f0", "ieee-le";
-         printf SYN "sp = fread(fid1,[%d, %d],'float');\n",  1025, $T;
-         printf SYN "ap = fread(fid2,[%d, %d],'float');\n",  1025, $T;
-         printf SYN "f0 = fread(fid3,[%d, %d],'float');\n",  1, $T;
-         printf SYN "fclose(fid1);\n";
-         printf SYN "fclose(fid2);\n";
-         printf SYN "fclose(fid3);\n";
-         printf SYN "[sy] = exstraightsynth(f0,sp,ap,%d,prm);\n", $sr;
-         printf SYN "wavwrite( sy, %d, '%s');\n\n", $sr, "$gendir/$uttId.wav";
+         printf SYN "prm.levelNormalizationIndicator = 0;\n";
+         printf SYN "\n";
+         printf SYN "fprintf(1, '\\nSynthesizing %s\\n');\n", "$gendir/$uttId.wav";
+         printf SYN "f0_fid = fopen('%s', 'r');\n", "$gendir/$uttId.f0";
+         printf SYN "sp_fid = fopen('%s', 'r');\n", "$gendir/$uttId.sp";
+         printf SYN "ap_fid = fopen('%s', 'r');\n", "$gendir/$uttId.ap";
+         printf SYN "f0 = fread(f0_fid, Inf, 'float');\n";
+         printf SYN "sp = fread(sp_fid, Inf, 'float');\n";
+         printf SYN "ap = fread(ap_fid, Inf, 'float');\n";
+         printf SYN "fclose(f0_fid);\n";
+         printf SYN "fclose(sp_fid);\n";
+         printf SYN "fclose(ap_fid);\n";
+         printf SYN "T = size(f0, 1);\n";
+         printf SYN "f0 = reshape(f0, [1, T]);\n";
+         printf SYN "sp = reshape(sp, [1025, T]);\n";
+         printf SYN "ap = reshape(ap, [1025, T]);\n";
+         printf SYN "[audio] = exstraightsynth(f0, sp, ap, %d, prm);\n", $sr;
+         printf SYN "audio_fid = fopen('%s', 'w');\n", "$gendir/$uttId.x32768.0.raw";
+         printf SYN "audio = fwrite(audio_fid, audio, 'float');\n";
+         printf SYN "fclose(audio_fid);\n";
+         printf SYN "\n";
          printf SYN "quit;\n";
          close(SYN);
          shell("$MATLAB < $gendir/$uttId.m");
@@ -2414,6 +2419,15 @@ sub gen_wave($$) {
 
          print "done\n";
       }
+
+      $line = "cat $gendir/$uttId.x32768.0.raw | $X2X +fs -r -o > $gendir/$uttId.raw";
+      shell($line);
+
+      $line = "$RAW2WAV -s " . ( $sr / 1000 ) . " -d $gendir $gendir/$uttId.raw";
+      shell($line);
+
+      $line = "rm -f $gendir/$uttId.raw";
+      shell($line);
    }
 
    close(UTTIDS);

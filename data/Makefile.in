@@ -65,8 +65,15 @@ all: cmp labels/mono labels/full lists_etc
 .PHONY: lists_etc
 lists_etc: labels/mono.mlf labels/full.mlf lists scp
 
-wav_checked: corpus-train.lst corpus-test.lst wav
-	# Check wav files are reasonable
+raw_float: corpus-train.lst corpus-test.lst wav
+	# Convert wav files to a standardized raw float form
+	# (N.B. <uttId>.x32768.0.raw files below are so-named because the natural
+	#   way to view a waveform sample as a float is as a value between -1.0 and
+	#   1.0, but here we have effectively multiplied this by 32768.0.
+	#   If this multiplier was changed to 1 then the SPTK pitch command below
+	#   would need to be adjusted, as would the noise floor (-e) for the mcep /
+	#   mgcep command.)
+	mkdir -p raw_float
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
 		if [ ! -f wav/$$uttId.wav ]; then \
 			echo "ERROR: file does not exist: wav/$$uttId.wav" 1>&2; \
@@ -96,21 +103,21 @@ wav_checked: corpus-train.lst corpus-test.lst wav
 			echo "ERROR: wav file wav/$$uttId.wav suffers from clipping" 1>&2; \
 			exit 1; \
 		fi; \
+		$(X2X) +sf $$uttId.raw > raw_float/$$uttId.x32768.0.raw; \
 		rm -f $$uttId.raw; \
 	done
-	touch wav_checked
+	touch raw_float
 
-speech_params: corpus-train.lst corpus-test.lst wav wav_checked
+speech_params: corpus-train.lst corpus-test.lst raw_float
 	# Extracting speech parameters from wav audio
 	mkdir -p speech_params
 	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
 	cat corpus-train.lst corpus-test.lst | while read uttId; do \
 		echo "Extracting speech parameters for utterance $$uttId"; \
 		if [ $(USESTRAIGHT) -eq 0 ]; then \
-			$(WAV2RAW) -d . wav/$$uttId.wav; \
-			$(X2X) +sf $$uttId.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > speech_params/$$uttId.lf0; \
+			cat raw_float/$$uttId.x32768.0.raw | $(PITCH) -H $(UPPERF0) -L $(LOWERF0) -p $(FRAMESHIFT) -s $${SAMPKHZ} -o 2 > speech_params/$$uttId.lf0; \
 			if [ $(GAMMA) -eq 0 ]; then \
-				$(X2X) +sf $$uttId.raw | \
+				cat raw_float/$$uttId.x32768.0.raw | \
 				$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
 				$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
 				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 > speech_params/$$uttId.mgc; \
@@ -120,7 +127,7 @@ speech_params: corpus-train.lst corpus-test.lst wav wav_checked
 				else \
 					GAINOPT=""; \
 				fi; \
-				$(X2X) +sf $$uttId.raw | \
+				cat raw_float/$$uttId.x32768.0.raw | \
 				$(FRAME) -l $(FRAMELEN) -p $(FRAMESHIFT) | \
 				$(WINDOW) -l $(FRAMELEN) -L $(FFTLEN) -w $(WINDOWTYPE) -n $(NORMALIZE) | \
 				$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l $(FFTLEN) -e 1.0E-08 -o 4 | \
@@ -134,23 +141,32 @@ speech_params: corpus-train.lst corpus-test.lst wav wav_checked
 				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
-			rm -f $$uttId.raw; \
 		else \
-			FRAMESHIFTMS=`echo $(FRAMESHIFT) | $(X2X) +af | $(SOPR) -m 1000 -d $(SAMPFREQ) | $(X2X) +fa`; \
-			echo "path(path,'$(STRAIGHT)');"                    >  $$uttId.m; \
-			echo "prm.F0frameUpdateInterval=$${FRAMESHIFTMS};"  >> $$uttId.m; \
-			echo "prm.F0searchUpperBound=$(UPPERF0);"           >> $$uttId.m; \
-			echo "prm.F0searchLowerBound=$(LOWERF0);"           >> $$uttId.m; \
-			echo "prm.spectralUpdateInterval=$${FRAMESHIFTMS};" >> $$uttId.m; \
-			echo "[x, fs] = wavread('wav/$$uttId.wav');"        >> $$uttId.m; \
-			echo "[f0,ap] = exstraightsource(x,fs,prm);"        >> $$uttId.m; \
-			echo "[sp] = exstraightspec(x,f0,fs,prm);"          >> $$uttId.m; \
-			echo "ap = ap';"                                    >> $$uttId.m; \
-			echo "sp = sp';"                                    >> $$uttId.m; \
-			echo "save '$$uttId.f0' f0 -ascii;"                 >> $$uttId.m; \
-			echo "save '$$uttId.ap' ap -ascii;"                 >> $$uttId.m; \
-			echo "save '$$uttId.sp' sp -ascii;"                 >> $$uttId.m; \
-			echo "quit;"                                        >> $$uttId.m; \
+			echo "path(path, '$(STRAIGHT)');"                        >  $$uttId.m; \
+			echo "fs = $(SAMPFREQ);"                                 >> $$uttId.m; \
+			echo "frameshift_ms = 1000.0 * $(FRAMESHIFT) / fs;"      >> $$uttId.m; \
+			echo "prm.F0frameUpdateInterval = frameshift_ms;"        >> $$uttId.m; \
+			echo "prm.F0searchUpperBound = $(UPPERF0);"              >> $$uttId.m; \
+			echo "prm.F0searchLowerBound = $(LOWERF0);"              >> $$uttId.m; \
+			echo "prm.spectralUpdateInterval = frameshift_ms;"       >> $$uttId.m; \
+			echo ""                                                  >> $$uttId.m; \
+			echo "fprintf(1, '\\\\nProcessing utterance $$uttId\\\\n');" >> $$uttId.m; \
+			echo "audio_fid = fopen('raw_float/$$uttId.x32768.0.raw', 'r');" >> $$uttId.m; \
+			echo "audio = fread(audio_fid, Inf, 'float');"           >> $$uttId.m; \
+			echo "fclose(audio_fid);"                                >> $$uttId.m; \
+			echo "[f0, ap] = exstraightsource(audio, fs, prm);"      >> $$uttId.m; \
+			echo "[sp] = exstraightspec(audio, f0, fs, prm);"        >> $$uttId.m; \
+			echo "f0_fid = fopen('$$uttId.f0', 'w');"                >> $$uttId.m; \
+			echo "sp_fid = fopen('$$uttId.sp', 'w');"                >> $$uttId.m; \
+			echo "ap_fid = fopen('$$uttId.ap', 'w');"                >> $$uttId.m; \
+			echo "fwrite(f0_fid, f0, 'float');"                      >> $$uttId.m; \
+			echo "fwrite(sp_fid, sp, 'float');"                      >> $$uttId.m; \
+			echo "fwrite(ap_fid, ap, 'float');"                      >> $$uttId.m; \
+			echo "fclose(f0_fid);"                                   >> $$uttId.m; \
+			echo "fclose(sp_fid);"                                   >> $$uttId.m; \
+			echo "fclose(ap_fid);"                                   >> $$uttId.m; \
+			echo ""                                                  >> $$uttId.m; \
+			echo "quit;"                                             >> $$uttId.m; \
 			$(MATLAB) < $$uttId.m; \
 			if [ -f $$uttId.f0 -a -f $$uttId.ap -a -f $$uttId.sp ]; then \
 				:; \
@@ -158,19 +174,19 @@ speech_params: corpus-train.lst corpus-test.lst wav wav_checked
 				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
-			$(X2X) +af $$uttId.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > speech_params/$$uttId.lf0; \
+			cat $$uttId.f0 | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > speech_params/$$uttId.lf0; \
 			if [ $(GAMMA) -eq 0 ]; then \
-				$(X2X) +af $$uttId.sp | \
+				cat $$uttId.sp | \
 				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > speech_params/$$uttId.mgc; \
 			else \
 				if [ $(LNGAIN) -eq 1 ]; then \
 					GAINOPT="-L"; \
 				fi; \
-				$(X2X) +af $$uttId.sp | \
+				cat $$uttId.sp | \
 				$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 -o 4 | \
 				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 2048 -p 8 -d 1.0E-08 > speech_params/$$uttId.mgc; \
 			fi; \
-			$(X2X) +af $$uttId.ap | \
+			cat $$uttId.ap | \
 			$(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > speech_params/$$uttId.bap; \
 			if [ -n "`$(NAN) speech_params/$$uttId.lf0`" ]; then \
 				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
@@ -184,7 +200,7 @@ speech_params: corpus-train.lst corpus-test.lst wav wav_checked
 				echo "ERROR: speech parameter extraction failed for utterance $$uttId" 1>&2; \
 				exit 1; \
 			fi; \
-			rm -f $$uttId.m $$uttId.raw $$uttId.f0 $$uttId.ap $$uttId.sp; \
+			rm -f $$uttId.m $$uttId.f0 $$uttId.ap $$uttId.sp; \
 		fi; \
 	done
 	touch speech_params
@@ -373,10 +389,14 @@ scp: corpus-train.lst corpus-test.lst corpus-gen.lst
 	touch scp
 
 .PHONY: clean
-clean: clean-speech_params clean-cmp clean-labels clean-lists clean-scp
+clean: clean-raw_float clean-speech_params clean-cmp clean-labels clean-lists clean-scp
 ifeq ($(USEUTT), 0)
 clean: clean-utts
 endif
+
+.PHONY: clean-raw_float
+clean-raw_float:
+	rm -rf raw_float
 
 .PHONY: clean-speech_params
 clean-speech_params:

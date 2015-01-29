@@ -12,7 +12,7 @@ data/corpus-gen.lst
 data/txt
 data/utts
 data/wav
-data/wav_checked
+data/raw_float
 data/mgc
 data/lf0
 data/bap
