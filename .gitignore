@@ -13,9 +13,7 @@ data/txt
 data/utts
 data/wav
 data/raw_float
-data/mgc
-data/lf0
-data/bap
+data/speech_params
 data/cmp
 data/labels/mono
 data/labels/full
