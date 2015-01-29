@@ -60,7 +60,6 @@ $cfg{'trn'} = "$prjdir/configs/qst${qnum}/ver${ver}/trn.cnf";
 $cfg{'tst'} = "$prjdir/configs/qst${qnum}/ver${ver}/tst.cnf";
 $cfg{'nvf'} = "$prjdir/configs/qst${qnum}/ver${ver}/nvf.cnf";
 $cfg{'syn'} = "$prjdir/configs/qst${qnum}/ver${ver}/syn.cnf";
-$cfg{'apg'} = "$prjdir/configs/qst${qnum}/ver${ver}/apg.cnf";
 $cfg{'stc'} = "$prjdir/configs/qst${qnum}/ver${ver}/stc.cnf";
 foreach $type (@cmp) {
    $cfg{$type} = "$prjdir/configs/qst${qnum}/ver${ver}/${type}.cnf";
@@ -78,40 +77,20 @@ $prtfile{'cmp'} .= ".prt";
 
 # model files
 foreach $set (@SET) {
+   $modelBase     = "$prjdir/models/qst${qnum}/ver${ver}";
    $model{$set}   = "$prjdir/models/qst${qnum}/ver${ver}/${set}";
    $hinit{$set}   = "$model{$set}/HInit";
    $hrest{$set}   = "$model{$set}/HRest";
    $vfloors{$set} = "$model{$set}/vFloors";
    $avermmf{$set} = "$model{$set}/average.mmf";
    $initmmf{$set} = "$model{$set}/init.mmf";
-   $monommf{$set} = "$model{$set}/monophone.mmf";
-   $fullmmf{$set} = "$model{$set}/fullcontext.mmf";
-   $clusmmf{$set} = "$model{$set}/clustered.mmf";
-   $untymmf{$set} = "$model{$set}/untied.mmf";
-   $reclmmf{$set} = "$model{$set}/re_clustered.mmf";
-   $rclammf{$set} = "$model{$set}/re_clustered_all.mmf";
-   $tiedlst{$set} = "$model{$set}/tiedlist";
-   $stcmmf{$set}  = "$model{$set}/stc.mmf";
-   $stcammf{$set} = "$model{$set}/stc_all.mmf";
-   $stcbase{$set} = "$model{$set}/stc.base";
-   $r2mmmf{$set}  = "$model{$set}/re_clustered_2mix.mmf";
-   $r2mammf{$set} = "$model{$set}/re_clustered_2mix_all.mmf";
-}
-
-# statistics files
-foreach $set (@SET) {
-   $stats{'clus'}{$set} = "$prjdir/stats/qst${qnum}/ver${ver}/clus_${set}.stats";
-   $stats{'recl'}{$set} = "$prjdir/stats/qst${qnum}/ver${ver}/recl_${set}.stats";
+   $reclmmf{$set} = "$model{$set}/mono-clus-clus/model.mmf";
 }
 
 # model edit files
 foreach $set (@SET) {
    $hed{$set} = "$prjdir/edfiles/qst${qnum}/ver${ver}/${set}";
    $lvf{$set} = "$hed{$set}/lvf.hed";
-   $m2f{$set} = "$hed{$set}/m2f.hed";
-   $mku{$set} = "$hed{$set}/mku.hed";
-   $unt{$set} = "$hed{$set}/unt.hed";
-   $upm{$set} = "$hed{$set}/upm.hed";
    foreach $type ( @{ $ref{$set} } ) {
       $cnv{$type} = "$hed{$set}/cnv_$type.hed";
       $cxc{'clus'}{$type} = "$hed{$set}/cxc_clus_$type.hed";
@@ -132,17 +111,13 @@ foreach $set (@SET) {
    $trd{$set} = "${prjdir}/trees/qst${qnum}/ver${ver}/${set}";
    foreach $type ( @{ $ref{$set} } ) {
       $mdl{$type} = "-m -a $mdlf{$type}" if ( $thr{$type} eq '000' );
-      $tre{'clus'}{$type} = "$trd{$set}/clus_${type}.inf";
-      $tre{'recl'}{$type} = "$trd{$set}/recl_${type}.inf";
+      $tre{'recl'}{$type} = "$modelBase/mono-clus-5-clus-5/${set}_$type.inf";
    }
 }
 
 # forced alignment files
 $faldir = "$prjdir/fal/qst${qnum}/ver${ver}";
-$monofal = "$faldir/mono";
-$rclafal = "$faldir/1mix";
-$stcafal = "$faldir/stc";
-$r2mafal = "$faldir/2mix";
+$monofal = "$modelBase/mono-fal";
 
 # converted model & tree files for hts_engine
 $voice = "$prjdir/voices/qst${qnum}/ver${ver}";
@@ -194,21 +169,6 @@ foreach $type (@cmp) {
    $gvtrv{$type} = "$voice/tree-gv-${type}.inf";
 }
 
-# files and directories for modulation spectrum-based postfilter
-$mspfdir     = "$prjdir/mspf/qst${qnum}/ver${ver}";
-$mspffaldir  = "$mspfdir/fal";
-$scp{'mspf'} = "$mspfdir/fal.scp";
-foreach $type ('mgc') {
-   foreach $mspftype ( "nat", "gen/1mix/$pgtype" ) {
-      $mspfdatdir{$mspftype}   = "$mspfdir/dat/$mspftype";
-      $mspfstatsdir{$mspftype} = "$mspfdir/stats/$mspftype";
-      for ( $d = 0 ; $d < $ordr{$type} ; $d++ ) {
-         $mspfmean{$type}{$mspftype}[$d] = "$mspfstatsdir{$mspftype}/${type}_dim$d.mean";
-         $mspfstdd{$type}{$mspftype}[$d] = "$mspfstatsdir{$mspftype}/${type}_dim$d.stdd";
-      }
-   }
-}
-
 # HTS Commands & Options ========================
 $HCompV{'cmp'} = "$HCOMPV    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -m ";
 $HCompV{'gv'}  = "$HCOMPV    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -m ";
@@ -217,11 +177,10 @@ $HInit         = "$HINIT     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}        
 $HRest         = "$HREST     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}                -m 1 -u tmvw    -w $wf ";
 $HERest{'mon'} = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -m 1 -u tmvwdmv -w $wf -t $beam ";
 $HERest{'ful'} = "$HEREST    -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'ful'} -m 1 -u tmvwdmv -w $wf -t $beam ";
-$HERest{'tst'} = "$HEREST    -A -B -C $cfg{'tst'} -D -T 1 -S $scp{'tst'}                -m 0 -u d ";
+$HERest{'tst'} = "$HEREST    -A -B -C $cfg{'tst'} -D -T 1                               -m 0 -u d ";
 $HERest{'gv'}  = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
 $HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -p -i ";
-$HSMMAlign{'mon'} = "$HSMMALIGN -A -C $cfg{'tst'} -D -T 1 -I $mlf{'mon'} -t $beam -w 1.0 ";
-$HSMMAlign{'ful'} = "$HSMMALIGN -A -C $cfg{'tst'} -D -T 1 -I $mlf{'ful'} -t $beam -w 1.0 ";
+$HSMMAlign     = "$HSMMALIGN -A    -C $cfg{'tst'} -D -T 1                               -t $beam -w 1.0 ";
 $HMGenS        = "$HMGENS    -A -B -C $cfg{'syn'} -D -T 1                               -t $beam ";
 
 # =============================================================
@@ -358,6 +317,12 @@ if ($IN_RE) {
 if ($MMMMF) {
    print_time("making a monophone mmf");
 
+   mkdir "$modelBase/mono", 0755;
+
+   shell("echo mono > $modelBase/mono/label_type");
+   shell("cp $lst{'mon'} $modelBase/mono/mlist_cmp.lst");
+   shell("cp $lst{'mon'} $modelBase/mono/mlist_dur.lst");
+
    foreach $set (@SET) {
       open( EDFILE, ">$lvf{$set}" ) || die "Cannot open $!";
 
@@ -376,8 +341,7 @@ if ($MMMMF) {
 
       close(EDFILE);
 
-      shell("$HHEd{'trn'} -T 1 -d $hrest{$set} -w $monommf{$set} $lvf{$set} $lst{'mon'}");
-      shell("gzip -c $monommf{$set} > $monommf{$set}.nonembedded.gz");
+      shell("$HHEd{'trn'} -T 1 -d $hrest{$set} -w $modelBase/mono/$set.mmf $lvf{$set} $lst{'mon'}");
    }
 }
 
@@ -393,184 +357,47 @@ if ($ERST0) {
             $k = $j + ( $i - 1 ) * $nIte;
             print("\n\nIteration $k of Embedded Re-estimation\n");
             $k = ( $i / $daem_nIte )**$daem_alpha;
-            shell("$HERest{'mon'} -k $k -H $monommf{'cmp'} -N $monommf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'mon'} $lst{'mon'}");
+            shell("$HERest{'mon'} -k $k -H $modelBase/mono/cmp.mmf -N $modelBase/mono/dur.mmf -M $modelBase/mono -R $modelBase/mono $modelBase/mono/mlist_cmp.lst $modelBase/mono/mlist_dur.lst");
          }
       }
    }
    else {
       for ( $i = 1 ; $i <= $nIte ; $i++ ) {
-
          # embedded reestimation
          print("\n\nIteration $i of Embedded Re-estimation\n");
-         shell("$HERest{'mon'} -H $monommf{'cmp'} -N $monommf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'mon'} $lst{'mon'}");
+         shell("$HERest{'mon'} -H $modelBase/mono/cmp.mmf -N $modelBase/mono/dur.mmf -M $modelBase/mono -R $modelBase/mono $modelBase/mono/mlist_cmp.lst $modelBase/mono/mlist_dur.lst");
       }
-   }
-
-   # compress reestimated model
-   foreach $set (@SET) {
-      shell("gzip -c $monommf{$set} > ${monommf{$set}}.embedded.gz");
    }
 }
 
 # HERest (computing test set log probability (monophone))
 if ($LTST0) {
-   print_time("computing test set log probability (monophone)");
-
-   if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -I $mlf{'mon'} -H $monommf{'cmp'} -N $monommf{'dur'} -M /dev/null -R /dev/null $lst{'mon'} $lst{'mon'}");
-   }
-   else {
-      print("(skipping since test set is empty)\n\n");
-   }
+   eval_mono( "$modelBase/mono", $scp{'tst'}, "mono" );
 }
 
 # HSMMAlign (forced alignment (monophone))
 if ($FAL0) {
-   print_time("forced alignment (monophone)");
-
-   # make directory
-   mkdir "$monofal", 0755;
-
-   # forced alignment
-   shell("$HSMMAlign{'mon'} -S $scp{'trn-tst'} -H $monommf{'cmp'} -N $monommf{'dur'} -m $monofal $lst{'mon'} $lst{'mon'}");
+   fal_on_train_corpus( "$modelBase/mono", "mono", "mono" );
 }
 
-# HHEd (copying monophone mmf to fullcontext one)
-if ($MN2FL) {
-   print_time("copying monophone mmf to fullcontext one");
-
-   foreach $set (@SET) {
-      open( EDFILE, ">$m2f{$set}" ) || die "Cannot open $!";
-      open( LIST,   "$lst{'mon'}" ) || die "Cannot open $!";
-
-      print EDFILE "// copy monophone models to fullcontext ones\n";
-      print EDFILE "CL \"$lst{'ful'}\"\n\n";    # CLone monophone to fullcontext
-
-      print EDFILE "// tie state transition probability\n";
-      while ( $phone = <LIST> ) {
-
-         # trimming leading and following whitespace characters
-         $phone =~ s/^\s+//;
-         $phone =~ s/\s+$//;
-
-         # skip a blank line
-         if ( $phone eq '' ) {
-            next;
-         }
-         print EDFILE "TI T_${phone} {*-${phone}+*.transP}\n";    # TIe transition prob
-      }
-      close(LIST);
-      close(EDFILE);
-
-      shell("$HHEd{'trn'} -T 1 -H $monommf{$set} -w $fullmmf{$set} $m2f{$set} $lst{'mon'}");
-   }
-}
-
-# HERest (embedded reestimation (fullcontext))
-if ($ERST1) {
-   print_time("embedded reestimation (fullcontext)");
-
-   $treeId = "clus";
-
-   $opt = "-C $cfg{'nvf'} -s $stats{$treeId}{'cmp'} -w 0.0";
-
-   # embedded reestimation
-   print("\n\nEmbedded Re-estimation\n");
-   shell("$HERest{'ful'} -H $fullmmf{'cmp'} -N $fullmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $opt $lst{'ful'} $lst{'ful'}");
-}
-
-# HHEd (tree-based context clustering)
-if ($CXCL1) {
-   print_time("tree-based context clustering");
-
-   $treeId = "clus";
-
-   # convert cmp stats to duration ones
-   convstats($treeId);
-
-   # tree-based clustering
-   foreach $set (@SET) {
-      shell("mv $fullmmf{$set} $clusmmf{$set}");
-
-      foreach $type ( @{ $ref{$set} } ) {
-         make_edfile_state( $type, $treeId );
-         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$treeId}{$type} $lst{'ful'}");
-      }
-      shell("gzip -c $clusmmf{$set} > $clusmmf{$set}.nonembedded.gz");
-   }
+# decision tree clustering (HHEd, HERest, HHEd)
+if ($MN2FL && $ERST1 && $CXCL1) {
+   decision_tree_cluster( "$modelBase/mono", "clus1" );
 }
 
 # HERest (embedded reestimation (clustered))
 if ($ERST2) {
-   print_time("embedded reestimation (clustered)");
-
-   for ( $i = 1 ; $i <= $nIte ; $i++ ) {
-      print("\n\nIteration $i of Embedded Re-estimation\n");
-      shell("$HERest{'ful'} -H $clusmmf{'cmp'} -N $clusmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'ful'} $lst{'ful'}");
-   }
-
-   # compress reestimated mmfs
-   foreach $set (@SET) {
-      shell("gzip -c $clusmmf{$set} > $clusmmf{$set}.embedded.gz");
-   }
+   expectation_maximization("$modelBase/mono-clus", $nIte, "clustered");
 }
 
-# HHEd (untying the parameter sharing structure)
-if ($UNTIE) {
-   print_time("untying the parameter sharing structure");
-
-   foreach $set (@SET) {
-      make_edfile_untie($set);
-      shell("$HHEd{'trn'} -T 1 -H $clusmmf{$set} -w $untymmf{$set} $unt{$set} $lst{'ful'}");
-   }
-}
-
-# HERest (embedded reestimation (untied))
-if ($ERST3) {
-   print_time("embedded reestimation (untied)");
-
-   $treeId = "recl";
-
-   $opt = "-C $cfg{'nvf'} -s $stats{$treeId}{'cmp'} -w 0.0";
-
-   print("\n\nEmbedded Re-estimation for untied mmfs\n");
-   shell("$HERest{'ful'} -H $untymmf{'cmp'} -N $untymmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $opt $lst{'ful'} $lst{'ful'}");
-}
-
-# HHEd (tree-based context clustering)
-if ($CXCL2) {
-   print_time("tree-based context clustering");
-
-   $treeId = "recl";
-
-   # convert cmp stats to duration ones
-   convstats($treeId);
-
-   # tree-based clustering
-   foreach $set (@SET) {
-      shell("mv $untymmf{$set} $reclmmf{$set}");
-
-      foreach $type ( @{ $ref{$set} } ) {
-         make_edfile_state( $type, $treeId );
-         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$treeId}{$type} $lst{'ful'}");
-      }
-      shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.nonembedded.gz");
-   }
+# decision tree clustering (HHEd, HERest, HHEd)
+if ($UNTIE && $ERST3 && $CXCL2) {
+   decision_tree_cluster( "$modelBase/mono-clus-5", "clus2" );
 }
 
 # HERest (embedded reestimation (re-clustered))
 if ($ERST4) {
-   print_time("embedded reestimation (re-clustered)");
-
-   for ( $i = 1 ; $i <= $nIte ; $i++ ) {
-      print("\n\nIteration $i of Embedded Re-estimation\n");
-      shell("$HERest{'ful'} -H $reclmmf{'cmp'} -N $reclmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'ful'} $lst{'ful'}");
-   }
-
-   # compress reestimated mmfs
-   foreach $set (@SET) {
-      shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.embedded.gz");
-   }
+   expectation_maximization("$modelBase/mono-clus-5-clus", $nIte, "re-clustered");
 }
 
 # making global variance
@@ -632,98 +459,23 @@ if ($MKUNG) {
 }
 
 # HMGenS & SPTK (training modulation spectrum-based postfilter)
-if ($TMSPF) {
-   print_time("training modulation spectrum-based postfilter");
-
-   if ($useMSPF) {
-
-      $mix     = '1mix';
-      $gentype = "gen/$mix/$pgtype";
-
-      # make directories
-      mkdir "$mspffaldir",               0755;
-      mkdir "$mspfdir/gen",              0755;
-      mkdir "$mspfdir/gen/$mix",         0755;
-      mkdir "$mspfdir/gen/$mix/$pgtype", 0755;
-      foreach $dir ( 'dat', 'stats' ) {
-         mkdir "$mspfdir/$dir",                  0755;
-         mkdir "$mspfdir/$dir/nat",              0755;
-         mkdir "$mspfdir/$dir/gen",              0755;
-         mkdir "$mspfdir/$dir/gen/$mix",         0755;
-         mkdir "$mspfdir/$dir/gen/$mix/$pgtype", 0755;
-      }
-
-      # make scp and fullcontext forced-aligned label files
-      make_full_fal();
-
-      # synthesize speech parameters using model alignment
-      shell("$HMGenS -C $cfg{'apg'} -S $scp{'mspf'} -c $pgtype -H $reclmmf{'cmp'} -N $reclmmf{'dur'} -M $mspfdir/$gentype $lst{'ful'} $lst{'ful'}");
-
-      # estimate statistics for modulation spectrum
-      make_mspf($gentype);
-   }
+if ($TMSPF and $useMSPF) {
+   train_mspf( "$modelBase/mono-clus-5-clus-5", "$modelBase/mono-fal", "$datdir/labels/full", "$datdir/speech_params" );
 }
 
-# HHEd (making unseen models (1mix))
-if ($MKUN1) {
-   print_time("making unseen models (1mix)");
-
-   $treeId = "recl";
-
-   foreach $set (@SET) {
-      make_edfile_mkunseen( $set, $treeId );
-      shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $rclammf{$set}.1mix $mku{$set} $lst{'ful'}");
-   }
-}
-
-# HMGenS (generating speech parameter sequences (1mix))
-if ($PGEN1) {
-   print_time("generating speech parameter sequences (1mix)");
-
-   $mix = '1mix';
-   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-   mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   mkdir $dir, 0755;
-
-   # generate parameter
-   shell("$HMGenS -S $scp{'gen'} -c $pgtype -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
-}
-
-# SPTK (synthesizing waveforms (1mix))
-if ($WGEN1) {
-   print_time("synthesizing waveforms (1mix)");
-
-   $mix = '1mix';
-   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-
-   gen_wave("$dir", $useMSPF);
+# generate and synthesize (HHEd, HMGenS, SPTK / STRAIGHT)
+if ($MKUN1 && $PGEN1 && $WGEN1) {
+   full_synth( "$modelBase/mono-clus-5-clus-5", $lst{'all'}, $scp{'gen'}, "gv", $pgtype, "1mix" );
 }
 
 # HERest (computing test set log probability (1mix))
 if ($LTST1) {
-   print_time("computing test set log probability (1mix)");
-
-   $mix = '1mix';
-
-   if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -I $mlf{'ful'} -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
-   }
-   else {
-      print("(skipping since test set is empty)\n\n");
-   }
+   eval_full( "$modelBase/mono-clus-5-clus-5", $lst{'all'}, $scp{'tst'}, "1mix" );
 }
 
 # HSMMAlign (forced alignment (1mix))
 if ($FAL1) {
-   print_time("forced alignment (1mix)");
-
-   # make directory
-   mkdir "$rclafal", 0755;
-
-   $mix = '1mix';
-
-   # forced alignment
-   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -m $rclafal $tiedlst{'cmp'} $tiedlst{'dur'}");
+   fal_on_train_corpus( "$modelBase/mono-clus-5-clus-5", "full", "1mix" );
 }
 
 # HHEd (converting mmfs to the HTS voice format)
@@ -801,165 +553,47 @@ if ( $ENGIN && !$usestraight ) {
 
 # HERest (semi-tied covariance matrices)
 if ($SEMIT) {
-   print_time("semi-tied covariance matrices");
-
-   foreach $set (@SET) {
-      shell("cp $reclmmf{$set} $stcmmf{$set}");
-   }
-
-   $opt = "-C $cfg{'stc'} -K $model{'cmp'} stc -u smvdmv";
-
-   make_stc_base();
-
-   shell("$HERest{'ful'} -H $stcmmf{'cmp'} -N $stcmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $opt $lst{'ful'} $lst{'ful'}");
-
-   # compress reestimated mmfs
-   foreach $set (@SET) {
-      shell("gzip -c $stcmmf{$set} > $stcmmf{$set}.embedded.gz");
-   }
+   estimate_semi_tied_cov( "$modelBase/mono-clus-5-clus-5", "stc" );
 }
 
-# HHEd (making unseen models (stc))
-if ($MKUNS) {
-   print_time("making unseen models (stc)");
-
-   $treeId = "recl";
-
-   foreach $set (@SET) {
-      make_edfile_mkunseen( $set, $treeId );
-      shell("$HHEd{'trn'} -T 1 -H $stcmmf{$set} -w $stcammf{$set} $mku{$set} $lst{'ful'}");
-   }
-}
-
-# HMGenS (generating speech parameter sequences (stc))
-if ($PGENS) {
-   print_time("generating speech parameter sequences (stc)");
-
-   $mix = 'stc';
-   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-   mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   mkdir $dir, 0755;
-
-   # generate parameter
-   shell("$HMGenS -S $scp{'gen'} -c $pgtype -H $stcammf{'cmp'} -N $stcammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
-}
-
-# SPTK (synthesizing waveforms (stc))
-if ($WGENS) {
-   print_time("synthesizing waveforms (stc)");
-
-   $mix = 'stc';
-   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-
-   gen_wave("$dir", 0);
+# generate and synthesize (HHEd, HMGenS, SPTK / STRAIGHT)
+if ($MKUNS && $PGENS && $WGENS) {
+   full_synth( "$modelBase/mono-clus-5-clus-5-stc", $lst{'all'}, $scp{'gen'}, "gv", 0, "stc" );
 }
 
 # HERest (computing test set log probability (stc))
 if ($LTSTS) {
-   print_time("computing test set log probability (stc)");
-
-   if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -I $mlf{'ful'} -H $stcammf{'cmp'} -N $stcammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
-   }
-   else {
-      print("(skipping since test set is empty)\n\n");
-   }
+   eval_full( "$modelBase/mono-clus-5-clus-5-stc", $lst{'all'}, $scp{'tst'}, "stc" );
 }
 
 # HSMMAlign (forced alignment (stc))
 if ($FALS) {
-   print_time("forced alignment (stc)");
-
-   # make directory
-   mkdir "$stcafal", 0755;
-
-   # forced alignment
-   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $stcammf{'cmp'} -N $stcammf{'dur'} -m $stcafal $tiedlst{'cmp'} $tiedlst{'dur'}");
+   fal_on_train_corpus( "$modelBase/mono-clus-5-clus-5-stc", "full", "stc" );
 }
 
 # HHED (increasing the number of mixture components (1mix -> 2mix))
 if ($UPMIX) {
-   print_time("increasing the number of mixture components (1mix -> 2mix)");
-
-   $set = 'cmp';
-   make_edfile_upmix($set);
-   shell("$HHEd{'trn'} -T 1 -H $reclmmf{$set} -w $r2mmmf{$set} $upm{$set} $lst{'ful'}");
-
-   $set = 'dur';
-   shell("cp $reclmmf{$set} $r2mmmf{$set}");
+   upmix2( "$modelBase/mono-clus-5-clus-5", "1mix -> 2mix" );
 }
 
 # HERest (embedded reestimation (2mix))
 if ($ERST5) {
-   print_time("embedded reestimation (2mix)");
-
-   for ( $i = 1 ; $i <= $nIte ; $i++ ) {
-      print("\n\nIteration $i of Embedded Re-estimation\n");
-      shell("$HERest{'ful'} -H $r2mmmf{'cmp'} -N $r2mmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'ful'} $lst{'ful'}");
-   }
-
-   # compress reestimated mmfs
-   foreach $set (@SET) {
-      shell("gzip -c $r2mmmf{$set} > $r2mmmf{$set}.embedded.gz");
-   }
+   expectation_maximization("$modelBase/mono-clus-5-clus-5-mix+1", $nIte, "2mix");
 }
 
-# HHEd (making unseen models (2mix))
-if ($MKUN2) {
-   print_time("making unseen models (2mix)");
-
-   $treeId = "recl";
-
-   foreach $set (@SET) {
-      make_edfile_mkunseen( $set, $treeId );
-      shell("$HHEd{'trn'} -T 1 -H $r2mmmf{$set} -w $r2mammf{$set} $mku{$set} $lst{'ful'}");
-   }
-}
-
-# HMGenS (generating speech parameter sequences (2mix))
-if ($PGEN2) {
-   print_time("generating speech parameter sequences (2mix)");
-
-   $mix = '2mix';
-   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-   mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   mkdir $dir, 0755;
-
-   # generate parameter
-   shell("$HMGenS -S $scp{'gen'} -c $pgtype -H $r2mammf{'cmp'} -N $r2mammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
-}
-
-# SPTK (synthesizing waveforms (2mix))
-if ($WGEN2) {
-   print_time("synthesizing waveforms (2mix)");
-
-   $mix = '2mix';
-   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-
-   gen_wave("$dir", 0);
+# generate and synthesize (HHEd, HMGenS, SPTK / STRAIGHT)
+if ($MKUN2 && $PGEN2 && $WGEN2) {
+   full_synth( "$modelBase/mono-clus-5-clus-5-mix+1-5", $lst{'all'}, $scp{'gen'}, "gv", 0, "2mix" );
 }
 
 # HERest (computing test set log probability (2mix))
 if ($LTST2) {
-   print_time("computing test set log probability (2mix)");
-
-   if (-s $scp{'tst'}) {
-      shell("$HERest{'tst'} -I $mlf{'ful'} -H $r2mammf{'cmp'} -N $r2mammf{'dur'} -M /dev/null -R /dev/null $tiedlst{'cmp'} $tiedlst{'dur'}");
-   }
-   else {
-      print("(skipping since test set is empty)\n\n");
-   }
+   eval_full( "$modelBase/mono-clus-5-clus-5-mix+1-5", $lst{'all'}, $scp{'tst'}, "2mix" );
 }
 
 # HSMMAlign (forced alignment (2mix))
 if ($FAL2) {
-   print_time("forced alignment (2mix)");
-
-   # make directory
-   mkdir "$r2mafal", 0755;
-
-   # forced alignment
-   shell("$HSMMAlign{'ful'} -S $scp{'trn-tst'} -H $r2mammf{'cmp'} -N $r2mammf{'dur'} -m $r2mafal $tiedlst{'cmp'} $tiedlst{'dur'}");
+   fal_on_train_corpus( "$modelBase/mono-clus-5-clus-5-mix+1-5", "full", "2mix" );
 }
 
 # sub routines ============================
@@ -1423,16 +1057,58 @@ sub copy_clus2clsa_gv {
    shell("cp $gvdir/gv.list $tiedlst{'gv'}");
 }
 
+sub make_stc_config($$) {
+   my ( $stcBaseFileIn, $cfgFileOut ) = @_;
+
+   # config file for STC
+   open( CONF, ">$cfgFileOut" ) || die "Cannot open $!";
+   print CONF "MAXSEMITIEDITER = 20\n";
+   print CONF "SEMITIEDMACRO   = \"cmp\"\n";
+   print CONF "SAVEFULLC = T\n";
+   print CONF "BASECLASS = \"$stcBaseFileIn\"\n";
+   print CONF "TRANSKIND = SEMIT\n";
+   print CONF "USEBIAS   = F\n";
+   print CONF "ADAPTKIND = BASE\n";
+   print CONF "BLOCKSIZE = \"";
+
+   foreach $type (@cmp) {
+      for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
+         $bSize = $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} / $nblk{$type};
+         print CONF "IntVec $nblk{$type} ";
+         for ( $b = 1 ; $b <= $nblk{$type} ; $b++ ) {
+            print CONF "$bSize ";
+         }
+      }
+   }
+   print CONF "\"\n";
+   print CONF "BANDWIDTH = \"";
+   foreach $type (@cmp) {
+      for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
+         $bSize = $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} / $nblk{$type};
+         print CONF "IntVec $nblk{$type} ";
+         for ( $b = 1 ; $b <= $nblk{$type} ; $b++ ) {
+            print CONF "$band{$type} ";
+         }
+      }
+   }
+   print CONF "\"\n";
+   close(CONF);
+}
+
 # sub routine for generating baseclass for STC
-sub make_stc_base {
+sub make_stc_base($) {
+   my ($stcBaseFileOut) = @_;
    my ( $type, $s, $class );
 
    # output baseclass definition
    # open baseclass definition file
-   open( BASE, ">$stcbase{'cmp'}" ) || die "Cannot open $!";
+   open( BASE, ">$stcBaseFileOut" ) || die "Cannot open $!";
+
+   $stcBaseName = `basename $stcBaseFileOut`;
+   chomp($stcBaseName);
 
    # output header
-   print BASE "~b \"stc.base\"\n";
+   print BASE "~b \"$stcBaseName\"\n";
    print BASE "<MMFIDMASK> *\n";
    print BASE "<PARAMETERS> MIXBASE\n";
 
@@ -1531,40 +1207,6 @@ sub make_config {
       close(CONF);
    }
 
-   # config file for STC
-   open( CONF, ">$cfg{'stc'}" ) || die "Cannot open $!";
-   print CONF "MAXSEMITIEDITER = 20\n";
-   print CONF "SEMITIEDMACRO   = \"cmp\"\n";
-   print CONF "SAVEFULLC = T\n";
-   print CONF "BASECLASS = \"$stcbase{'cmp'}\"\n";
-   print CONF "TRANSKIND = SEMIT\n";
-   print CONF "USEBIAS   = F\n";
-   print CONF "ADAPTKIND = BASE\n";
-   print CONF "BLOCKSIZE = \"";
-
-   foreach $type (@cmp) {
-      for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
-         $bSize = $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} / $nblk{$type};
-         print CONF "IntVec $nblk{$type} ";
-         for ( $b = 1 ; $b <= $nblk{$type} ; $b++ ) {
-            print CONF "$bSize ";
-         }
-      }
-   }
-   print CONF "\"\n";
-   print CONF "BANDWIDTH = \"";
-   foreach $type (@cmp) {
-      for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
-         $bSize = $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} / $nblk{$type};
-         print CONF "IntVec $nblk{$type} ";
-         for ( $b = 1 ; $b <= $nblk{$type} ; $b++ ) {
-            print CONF "$band{$type} ";
-         }
-      }
-   }
-   print CONF "\"\n";
-   close(CONF);
-
    # config file for parameter generation
    open( CONF, ">$cfg{'syn'}" ) || die "Cannot open $!";
    print CONF "NATURALREADORDER = T\n";
@@ -1624,17 +1266,11 @@ sub make_config {
    print CONF "CDGV       = $boolstring[$cdgv]\n";
 
    close(CONF);
-
-   # config file for aligned parameter generation
-   open( CONF, ">$cfg{'apg'}" ) || die "Cannot open $!";
-   print CONF "MODELALIGN = T\n";
-   close(CONF);
-
 }
 
 # sub routine for generating .hed files for decision-tree clustering
-sub make_edfile_state($$) {
-   my ( $type, $treeId ) = @_;
+sub make_edfile_state($$$$) {
+   my ( $type, $statsFileIn, $edFile, $treeFileOut ) = @_;
    my ( @lines, $i, @nstate );
 
    $nstate{'cmp'} = $nState;
@@ -1644,9 +1280,9 @@ sub make_edfile_state($$) {
    @lines = <QSFILE>;
    close(QSFILE);
 
-   open( EDFILE, ">$cxc{$treeId}{$type}" ) || die "Cannot open $!";
+   open( EDFILE, ">$edFile" ) || die "Cannot open $!";
    print EDFILE "// load stats file\n";
-   print EDFILE "RO $gam{$type} \"$stats{$treeId}{$t2s{$type}}\"\n\n";
+   print EDFILE "RO $gam{$type} \"$statsFileIn\"\n\n";
    print EDFILE "TR 0\n\n";
    print EDFILE "// questions for decision tree-based context clustering\n";
    print EDFILE @lines;
@@ -1658,7 +1294,7 @@ sub make_edfile_state($$) {
    }
    print EDFILE "\nTR 1\n\n";
    print EDFILE "// output constructed trees\n";
-   print EDFILE "ST \"$tre{$treeId}{$type}\"\n";
+   print EDFILE "ST \"$treeFileOut\"\n";
    close(EDFILE);
 }
 
@@ -1696,14 +1332,14 @@ sub make_edfile_state_gv($$) {
 }
 
 # sub routine for untying structures
-sub make_edfile_untie($) {
-   my ($set) = @_;
+sub make_edfile_untie($$) {
+   my ( $set, $edFile ) = @_;
    my ( $type, $i, @nstate );
 
    $nstate{'cmp'} = $nState;
    $nstate{'dur'} = 1;
 
-   open( EDFILE, ">$unt{$set}" ) || die "Cannot open $!";
+   open( EDFILE, ">$edFile" ) || die "Cannot open $!";
 
    print EDFILE "// untie parameter sharing structure\n";
    foreach $type ( @{ $ref{$set} } ) {
@@ -1721,14 +1357,14 @@ sub make_edfile_untie($) {
 }
 
 # sub routine to increase the number of mixture components
-sub make_edfile_upmix($) {
-   my ($set) = @_;
+sub make_edfile_upmix($$) {
+   my ( $set, $edFile ) = @_;
    my ( $type, $i, @nstate );
 
    $nstate{'cmp'} = $nState;
    $nstate{'dur'} = 1;
 
-   open( EDFILE, ">$upm{$set}" ) || die "Cannot open $!";
+   open( EDFILE, ">$edFile" ) || die "Cannot open $!";
 
    print EDFILE "// increase the number of mixtures per stream\n";
    foreach $type ( @{ $ref{$set} } ) {
@@ -1746,11 +1382,11 @@ sub make_edfile_upmix($) {
 }
 
 # sub routine to convert statistics file for cmp into one for dur
-sub convstats($) {
-   my ($treeId) = @_;
+sub convstats($$) {
+   my ( $cmpStatsFileIn, $durStatsFileOut ) = @_;
 
-   open( IN,  "$stats{$treeId}{'cmp'}" )  || die "Cannot open $!";
-   open( OUT, ">$stats{$treeId}{'dur'}" ) || die "Cannot open $!";
+   open( IN,  "$cmpStatsFileIn" )  || die "Cannot open $!";
+   open( OUT, ">$durStatsFileOut" ) || die "Cannot open $!";
    while (<IN>) {
       @LINE = split(' ');
       printf OUT ( "%4d %14s %4d %4d\n", $LINE[0], $LINE[1], $LINE[2], $LINE[2] );
@@ -1796,21 +1432,21 @@ sub make_edfile_convert_gv($) {
 }
 
 # sub routine for generating .hed files for making unseen models
-sub make_edfile_mkunseen($$) {
-   my ( $set, $treeId ) = @_;
+sub make_edfile_mkunseen($$$$$) {
+   my ( $modelDirIn, $genMListFile, $set, $edFile, $tiedMListFileOut ) = @_;
    my ($type);
 
-   open( EDFILE, ">$mku{$set}" ) || die "Cannot open $!";
+   open( EDFILE, ">$edFile" ) || die "Cannot open $!";
    print EDFILE "\nTR 2\n\n";
    foreach $type ( @{ $ref{$set} } ) {
       print EDFILE "// load trees for $type\n";
-      print EDFILE "LT \"$tre{$treeId}{$type}\"\n\n";
+      print EDFILE "LT \"$modelDirIn/${set}_$type.inf\"\n\n";
    }
 
    print EDFILE "// make unseen model\n";
-   print EDFILE "AU \"$lst{'all'}\"\n\n";
+   print EDFILE "AU \"$genMListFile\"\n\n";
    print EDFILE "// make model compact\n";
-   print EDFILE "CO \"$tiedlst{$set}\"\n\n";
+   print EDFILE "CO \"$tiedMListFileOut\"\n\n";
 
    close(EDFILE);
 }
@@ -2282,8 +1918,8 @@ sub postfiltering_lsp($$) {
 }
 
 # sub routine for speech synthesis from log f0 and mel-cepstral coefficients
-sub gen_wave($$) {
-   my ( $gendir, $useMSPF ) = @_;
+sub gen_wave($$$) {
+   my ( $gendir, $useMSPF, $mspfStatsDir ) = @_;
    my ( $line, $lgopt, $uttId, $T, $lf0, $bap );
 
    print "Processing directory $gendir:\n";
@@ -2304,7 +1940,7 @@ sub gen_wave($$) {
 
          # apply postfiltering
          if ($useMSPF) {
-            postfiltering_mspf( $uttId, $gendir, 'mgc' );
+            postfiltering_mspf( $mspfStatsDir, $uttId, $gendir, 'mgc' );
             $mgc = "$gendir/$uttId.p_mgc";
          }
          elsif ( !$useGV && $pf_mcp != 1.0 ) {
@@ -2319,7 +1955,7 @@ sub gen_wave($$) {
 
          # apply postfiltering
          if ($useMSPF) {
-            postfiltering_mspf( $uttId, $gendir, 'mgc' );
+            postfiltering_mspf( $mspfStatsDir, $uttId, $gendir, 'mgc' );
             $mgc = "$gendir/$uttId.p_mgc";
          }
          elsif ( !$useGV && $pf_lsp != 1.0 ) {
@@ -2434,12 +2070,10 @@ sub gen_wave($$) {
 }
 
 # sub routine for modulation spectrum-based postfilter
-sub postfiltering_mspf($$$) {
-   my ( $base, $gendir, $type ) = @_;
-   my ( $gentype, $T, $line, $d, @seq );
+sub postfiltering_mspf($$$$) {
+   my ( $statsDir, $base, $gendir, $type ) = @_;
+   my ( $T, $line, $d, @seq );
 
-   $gentype = $gendir;
-   $gentype =~ s/$prjdir\/gen\/qst$qnum\/ver$ver\/+/gen\//g;
    $T = get_file_size("$gendir/$base.$type") / $ordr{$type} / 4;
 
    # subtract utterance-level mean
@@ -2458,10 +2092,10 @@ sub postfiltering_mspf($$$) {
 
       # convert
       $line = "cat $gendir/$base.$type.mspec_dim$d | ";
-      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -s $mspfmean{$type}{$gentype}[$d] | ";
-      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $mspfstdd{$type}{$gentype}[$d] | ";
-      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -m $mspfstdd{$type}{'nat'}[$d] | ";
-      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -a $mspfmean{$type}{'nat'}[$d] | ";
+      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -s $statsDir/gen/${type}_dim$d.mean | ";
+      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $statsDir/gen/${type}_dim$d.stdd | ";
+      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -m $statsDir/nat/${type}_dim$d.stdd | ";
+      $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -a $statsDir/nat/${type}_dim$d.mean | ";
 
       # apply weight
       $line .= "$VOPR -l " . ( $mspfFFTLen / 2 + 1 ) . " -s $gendir/$base.$type.mspec_dim$d | ";
@@ -2580,12 +2214,16 @@ sub get_cmd_seq2mp($$$) {
    return $line;
 }
 
-# sub routine for making force-aligned label files
-sub make_full_fal() {
+# sub routine for combining alignments
+#   (taking the timings from one and the labels from the other)
+sub combine_alignments($$$$$) {
+   my ( $labelsFromAlignDir, $timingsFromAlignDir, $cmpScpFile, $alignDirOut, $labScpFileOut ) = @_;
    my ( $line, $base, $istr, $lstr, @iarr, @larr );
 
-   open( ISCP, "$scp{'trn'}" )   || die "Cannot open $!";
-   open( OSCP, ">$scp{'mspf'}" ) || die "Cannot open $!";
+   mkdir $alignDirOut, 0755;
+
+   open( ISCP, "$cmpScpFile" )   || die "Cannot open $!";
+   open( OSCP, ">$labScpFileOut" ) || die "Cannot open $!";
 
    while (<ISCP>) {
       $line = $_;
@@ -2593,9 +2231,9 @@ sub make_full_fal() {
       $base = `basename $line .cmp`;
       chomp($base);
 
-      open( LAB,  "$datdir/labels/full/$base.lab" ) || die "Cannot open $!";
-      open( IFAL, "$monofal/$base.lab" )            || die "Cannot open $!";
-      open( OFAL, ">$mspffaldir/$base.lab" )        || die "Cannot open $!";
+      open( LAB,  "$labelsFromAlignDir/$base.lab" )  || die "Cannot open $!";
+      open( IFAL, "$timingsFromAlignDir/$base.lab" ) || die "Cannot open $!";
+      open( OFAL, ">$alignDirOut/$base.lab" )          || die "Cannot open $!";
 
       while ( ( $istr = <IFAL> ) && ( $lstr = <LAB> ) ) {
          chomp($istr);
@@ -2608,7 +2246,7 @@ sub make_full_fal() {
       close(LAB);
       close(IFAL);
       close(OFAL);
-      print OSCP "$mspffaldir/$base.lab\n";
+      print OSCP "$alignDirOut/$base.lab\n";
    }
 
    close(ISCP);
@@ -2616,23 +2254,31 @@ sub make_full_fal() {
 }
 
 # sub routine for calculating statistics of modulation spectrum
-sub make_mspf($) {
-   my ($gentype) = @_;
-   my ( $cmp, $base, $type, $mspftype, $orgdir, $line, $d );
+sub compute_mspf_stats($$$$$) {
+   my ( $genDir, $monoAlignDir, $natDir, $cmpScpFile, $statsDirOut ) = @_;
+   my ( $cmp, $base, $type, $natOrGen, $orgdir, $line, $d );
    my ( $str, @arr, $start, $end, $find, $j );
+
+   mkdir $statsDirOut, 0755;
+   $datDir = "$statsDirOut/_raw_data";
+   mkdir $datDir, 0755;
+   foreach $natOrGen ( 'nat', 'gen' ) {
+      mkdir "$statsDirOut/$natOrGen";
+      mkdir "$datDir/$natOrGen";
+   }
 
    # reset modulation spectrum files
    foreach $type ('mgc') {
-      foreach $mspftype ( 'nat', $gentype ) {
+      foreach $natOrGen ( 'nat', 'gen' ) {
          for ( $d = 0 ; $d < $ordr{$type} ; $d++ ) {
-            shell("rm -f $mspfstatsdir{$mspftype}/${type}_dim$d.data");
-            shell("touch $mspfstatsdir{$mspftype}/${type}_dim$d.data");
+            shell("rm -f $statsDirOut/$natOrGen/${type}_dim$d.data");
+            shell("touch $statsDirOut/$natOrGen/${type}_dim$d.data");
          }
       }
    }
 
    # calculate modulation spectrum from natural/generated sequences
-   open( SCP, "$scp{'trn'}" ) || die "Cannot open $!";
+   open( SCP, "$cmpScpFile" ) || die "Cannot open $!";
    while (<SCP>) {
       $cmp = $_;
       chomp($cmp);
@@ -2641,23 +2287,23 @@ sub make_mspf($) {
       print " Making data from $base.lab for modulation spectrum...";
 
       foreach $type ('mgc') {
-         foreach $mspftype ( 'nat', $gentype ) {
+         foreach $natOrGen ( 'nat', 'gen' ) {
 
             # determine original feature directory
-            if   ( $mspftype eq 'nat' ) { $orgdir = "$datdir/speech_params"; }
-            else                        { $orgdir = "$mspfdir/$mspftype"; }
+            if   ( $natOrGen eq 'nat' ) { $origDir = "$natDir"; }
+            else                       { $origDir = "$genDir"; }
 
             # subtract utterance-level mean
-            $line = get_cmd_utmean( "$orgdir/$base.$type", $type );
-            shell("$line > $mspfdatdir{$mspftype}/$base.$type.mean");
-            $line = get_cmd_vopr( "$orgdir/$base.$type", "-s", "$mspfdatdir{$mspftype}/$base.$type.mean", $type );
-            shell("$line > $mspfdatdir{$mspftype}/$base.$type.subtracted");
+            $line = get_cmd_utmean( "$origDir/$base.$type", $type );
+            shell("$line > $datDir/$natOrGen/$base.$type.mean");
+            $line = get_cmd_vopr( "$origDir/$base.$type", "-s", "$datDir/$natOrGen/$base.$type.mean", $type );
+            shell("$line > $datDir/$natOrGen/$base.$type.subtracted");
 
             # extract non-silence frames
             if ( @slnt > 0 ) {
-               shell("rm -f $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
-               shell("touch $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
-               open( F, "$monofal/$base.lab" ) || die "Cannot open $!";
+               shell("rm -f $datDir/$natOrGen/$base.$type.subtracted.no-sil");
+               shell("touch $datDir/$natOrGen/$base.$type.subtracted.no-sil");
+               open( F, "$monoAlignDir/$base.lab" ) || die "Cannot open $!";
                while ( $str = <F> ) {
                   chomp($str);
                   @arr = split( / /, $str );
@@ -2668,23 +2314,23 @@ sub make_mspf($) {
                   if ( $find == 0 ) {
                      $start = int( $arr[0] * ( 1.0e-7 / ( $fs / $sr ) ) );
                      $end   = int( $arr[1] * ( 1.0e-7 / ( $fs / $sr ) ) );
-                     shell("$BCUT -s $start -e $end -l $ordr{$type} < $mspfdatdir{$mspftype}/$base.$type.subtracted >> $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
+                     shell("$BCUT -s $start -e $end -l $ordr{$type} < $datDir/$natOrGen/$base.$type.subtracted >> $datDir/$natOrGen/$base.$type.subtracted.no-sil");
                   }
                }
                close(F);
             }
             else {
-               shell("cp $mspfdatdir{$mspftype}/$base.$type.subtracted $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
+               shell("cp $datDir/$natOrGen/$base.$type.subtracted $datDir/$natOrGen/$base.$type.subtracted.no-sil");
             }
 
             # calculate modulation spectrum of each dimension
             for ( $d = 0 ; $d < $ordr{$type} ; $d++ ) {
-               $line = get_cmd_seq2ms( "$mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil", $type, $d );
-               shell("$line >> $mspfstatsdir{$mspftype}/${type}_dim$d.data");
+               $line = get_cmd_seq2ms( "$datDir/$natOrGen/$base.$type.subtracted.no-sil", $type, $d );
+               shell("$line >> $statsDirOut/$natOrGen/${type}_dim$d.data");
             }
 
-            shell("rm -f $mspfdatdir{$mspftype}/$base.$type.mean");
-            shell("rm -f $mspfdatdir{$mspftype}/$base.$type.subtracted.no-sil");
+            shell("rm -f $datDir/$natOrGen/$base.$type.mean");
+            shell("rm -f $datDir/$natOrGen/$base.$type.subtracted.no-sil");
          }
       }
       print "done\n";
@@ -2693,15 +2339,334 @@ sub make_mspf($) {
 
    # estimate modulation spectrum statistics
    foreach $type ('mgc') {
-      foreach $mspftype ( 'nat', $gentype ) {
+      foreach $natOrGen ( 'nat', 'gen' ) {
          for ( $d = 0 ; $d < $ordr{$type} ; $d++ ) {
-            shell( "$VSTAT -o 1 -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $mspfstatsdir{$mspftype}/${type}_dim$d.data > $mspfmean{$type}{$mspftype}[$d]" );
-            shell( "$VSTAT -o 2 -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $mspfstatsdir{$mspftype}/${type}_dim$d.data | $SOPR -SQRT > $mspfstdd{$type}{$mspftype}[$d]" );
+            shell( "$VSTAT -o 1 -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $statsDirOut/$natOrGen/${type}_dim$d.data > $statsDirOut/$natOrGen/${type}_dim$d.mean" );
+            shell( "$VSTAT -o 2 -l " . ( $mspfFFTLen / 2 + 1 ) . " -d $statsDirOut/$natOrGen/${type}_dim$d.data | $SOPR -SQRT > $statsDirOut/$natOrGen/${type}_dim$d.stdd" );
 
-            shell("rm -f $mspfstatsdir{$mspftype}/${type}_dim$d.data");
+            shell("rm -f $statsDirOut/$natOrGen/${type}_dim$d.data");
          }
       }
    }
+}
+
+sub train_mspf($$) {
+   my ( $modelDirIn, $monoAlignDir, $fullLabDir, $natDir ) = @_;
+   my ( $modelDirOut, $genDir );
+
+   print_time("training modulation spectrum-based postfilter");
+
+   $modelDirOut = "$modelDirIn-mspf";
+   mkdir "$modelDirOut", 0755;
+
+   $genDir = "$modelDirOut/_gen";
+   mkdir $genDir, 0755;
+
+   # make scp and fullcontext forced-aligned label files
+   combine_alignments( $fullLabDir, $monoAlignDir, $scp{'trn'}, "$modelDirOut/_full-from-mono-fal", "$genDir/gen_fal.scp" );
+
+   # config file for aligned parameter generation
+   open( CONF, ">$genDir/apg.cnf" ) || die "Cannot open $!";
+   print CONF "MODELALIGN = T\n";
+   close(CONF);
+
+   # synthesize speech parameters using model alignment
+   shell("$HMGenS -C $genDir/apg.cnf -S $genDir/gen_fal.scp -c $pgtype -H $modelDirIn/cmp.mmf -N $modelDirIn/dur.mmf -M $genDir $modelDirIn/mlist_cmp.lst $modelDirIn/mlist_dur.lst");
+
+   # estimate statistics for modulation spectrum
+   compute_mspf_stats( $genDir, $monoAlignDir, $natDir, $scp{'trn'}, "$modelDirOut/stats" );
+}
+
+sub expectation_maximization($$$) {
+   my ( $modelDirIn, $numIts, $tag ) = @_;
+   my ( $modelDirOut, $set, $type, $dirIn, $it );
+
+   print_time("embedded reestimation ($tag)");
+
+   $modelDirOut = "$modelDirIn-$numIts";
+   mkdir "$modelDirOut", 0755;
+
+   shell("cp $modelDirIn/label_type $modelDirOut/");
+   shell("cp $modelDirIn/mlist_cmp.lst $modelDirOut/");
+   shell("cp $modelDirIn/mlist_dur.lst $modelDirOut/");
+
+   foreach $set (@SET) {
+      foreach $type ( @{ $ref{$set} } ) {
+         shell("cp $modelDirIn/${set}_$type.inf $modelDirOut/");
+      }
+   }
+
+   $dirIn = $modelDirIn;
+   for ( $it = 1 ; $it <= $numIts ; $it++ ) {
+      print("\n\nIteration $it of Embedded Re-estimation\n");
+      shell("$HERest{'ful'} -H $dirIn/cmp.mmf -N $dirIn/dur.mmf -M $modelDirOut -R $modelDirOut $dirIn/mlist_cmp.lst $dirIn/mlist_dur.lst");
+
+      $dirIn = $modelDirOut;
+   }
+}
+
+sub decision_tree_cluster($$) {
+   my ( $modelDirIn, $tag ) = @_;
+   my ( $modelDirOut, $labelType, $set, $type, $phone );
+
+   $modelDirOut = "$modelDirIn-clus";
+   mkdir "$modelDirOut", 0755;
+   mkdir "$modelDirOut/_acc", 0755;
+
+   $labelType = get_label_type($modelDirIn);
+   if ( $labelType eq "mono" ) {
+      print_time("copying monophone mmf to fullcontext one ($tag)");
+
+      shell("echo full > $modelDirOut/_acc/label_type");
+      shell("cp $lst{'ful'} $modelDirOut/_acc/mlist_cmp.lst");
+      shell("cp $lst{'ful'} $modelDirOut/_acc/mlist_dur.lst");
+
+      foreach $set (@SET) {
+         open( EDFILE, ">$modelDirOut/_acc/m2f_$set.hed" ) || die "Cannot open $!";
+         open( LIST,   "$modelDirIn/mlist_$set.lst" ) || die "Cannot open $!";
+
+         print EDFILE "// copy monophone models to fullcontext ones\n";
+         print EDFILE "CL \"$lst{'ful'}\"\n\n";    # CLone monophone to fullcontext
+
+         print EDFILE "// tie state transition probability\n";
+         while ( $phone = <LIST> ) {
+
+            # trimming leading and following whitespace characters
+            $phone =~ s/^\s+//;
+            $phone =~ s/\s+$//;
+
+            # skip a blank line
+            if ( $phone eq '' ) {
+               next;
+            }
+            print EDFILE "TI T_${phone} {*-${phone}+*.transP}\n";    # TIe transition prob
+         }
+         close(LIST);
+         close(EDFILE);
+
+         shell("$HHEd{'trn'} -T 1 -H $modelDirIn/$set.mmf -w $modelDirOut/_acc/$set.mmf $modelDirOut/_acc/m2f_$set.hed $modelDirIn/mlist_$set.lst");
+      }
+   }
+   else {
+      print_time("untying the parameter sharing structure ($tag)");
+
+      shell("cp $modelDirIn/label_type $modelDirOut/_acc/");
+      shell("cp $modelDirIn/mlist_cmp.lst $modelDirOut/_acc/");
+      shell("cp $modelDirIn/mlist_dur.lst $modelDirOut/_acc/");
+
+      foreach $set (@SET) {
+         make_edfile_untie( $set, "$modelDirOut/_acc/untie_$set.hed" );
+         shell("$HHEd{'trn'} -T 1 -H $modelDirIn/$set.mmf -w $modelDirOut/_acc/$set.mmf $modelDirOut/_acc/untie_$set.hed $modelDirIn/mlist_$set.lst");
+      }
+   }
+
+   print_time("fullcontext embedded reestimation ($tag)");
+
+   print("\n\nEmbedded Re-estimation\n");
+   shell("$HERest{'ful'} -H $modelDirOut/_acc/cmp.mmf -N $modelDirOut/_acc/dur.mmf -M $modelDirOut/_acc -R $modelDirOut/_acc -C $cfg{'nvf'} -s $modelDirOut/_acc/cmp.stats -w 0.0 $modelDirOut/_acc/mlist_cmp.lst $modelDirOut/_acc/mlist_dur.lst");
+
+   print_time("tree-based context clustering ($tag)");
+
+   # convert cmp stats to duration ones
+   convstats( "$modelDirOut/_acc/cmp.stats", "$modelDirOut/_acc/dur.stats" );
+
+   shell("cp $modelDirOut/_acc/label_type $modelDirOut/");
+   shell("cp $modelDirOut/_acc/mlist_cmp.lst $modelDirOut/");
+   shell("cp $modelDirOut/_acc/mlist_dur.lst $modelDirOut/");
+
+   foreach $set (@SET) {
+      shell("mv $modelDirOut/_acc/$set.mmf $modelDirOut/$set.mmf");
+
+      foreach $type ( @{ $ref{$set} } ) {
+         make_edfile_state( $type, "$modelDirOut/_acc/$set.stats", "$modelDirOut/cxc_${set}_$type.hed", "$modelDirOut/${set}_$type.inf" );
+         shell("$HHEd{'trn'} -T 3 -C $cfg{$type} -H $modelDirOut/$set.mmf $mdl{$type} -w $modelDirOut/$set.mmf $modelDirOut/cxc_${set}_$type.hed $modelDirOut/mlist_$set.lst");
+      }
+   }
+
+   # (FIXME : remove _acc)
+}
+
+sub add_1_mix_comp($$) {
+   my ( $modelDirIn, $tag ) = @_;
+   my ($modelDirOut);
+
+   print_time("increasing the number of mixture components ($tag)");
+
+   $modelDirOut = "$modelDirIn-mix+1";
+   mkdir "$modelDirOut", 0755;
+
+   shell("cp $modelDirIn/label_type $modelDirOut/");
+   shell("cp $modelDirIn/mlist_cmp.lst $modelDirOut/");
+   shell("cp $modelDirIn/mlist_dur.lst $modelDirOut/");
+
+   $labelType = get_label_type($modelDirIn);
+   if ( $labelType ne "mono" ) {
+      foreach $set (@SET) {
+         foreach $type ( @{ $ref{$set} } ) {
+            shell("cp $modelDirIn/${set}_$type.inf $modelDirOut/");
+         }
+      }
+   }
+
+   make_edfile_upmix( "cmp", "$modelDirOut/_upmix_cmp.hed" );
+   shell("$HHEd{'trn'} -T 1 -H $modelDirIn/cmp.mmf -w $modelDirOut/cmp.mmf $modelDirOut/_upmix_cmp.hed $modelDirIn/mlist_cmp.lst");
+
+   shell("cp $modelDirIn/dur.mmf $modelDirOut/");
+}
+
+sub estimate_semi_tied_cov($$) {
+   my ( $modelDirIn, $tag ) = @_;
+   my ( $modelDirOut, $opt );
+
+   print_time("semi-tied covariance matrices ($tag)");
+
+   $modelDirOut = "$modelDirIn-stc";
+   mkdir "$modelDirOut", 0755;
+
+   shell("cp $modelDirIn/label_type $modelDirOut/");
+   shell("cp $modelDirIn/mlist_cmp.lst $modelDirOut/");
+   shell("cp $modelDirIn/mlist_dur.lst $modelDirOut/");
+
+   foreach $set (@SET) {
+      foreach $type ( @{ $ref{$set} } ) {
+         shell("cp $modelDirIn/${set}_$type.inf $modelDirOut/");
+      }
+   }
+
+   make_stc_base("$modelDirOut/_stc.base");
+   make_stc_config( "$modelDirOut/_stc.base", "$modelDirOut/_stc.cnf" );
+
+   $opt = "-C $modelDirOut/_stc.cnf -K $modelDirOut stc -u smvdmv";
+
+   shell("$HERest{'ful'} -H $modelDirIn/cmp.mmf -N $modelDirIn/dur.mmf -M $modelDirOut -R $modelDirOut $opt $modelDirIn/mlist_cmp.lst $modelDirIn/mlist_dur.lst");
+}
+
+sub get_label_type($) {
+   my ($modelDirIn) = @_;
+   my ($labelType);
+
+   open( LABTYPE, "$modelDirIn/label_type" ) || die "Cannot open $!";
+   $labelType = <LABTYPE>;
+   chomp($labelType);
+   close LABTYPE;
+
+   return $labelType;
+}
+
+sub fal_on_train_corpus($$$) {
+   my ( $modelDirIn, $monoOrFull, $tag ) = @_;
+   my ( $dirOut, $labelType, $mlfFile );
+
+   print_time("forced alignment ($tag)");
+
+   $dirOut = "$modelDirIn-fal";
+   mkdir "$dirOut", 0755;
+
+   $labelType = get_label_type($modelDirIn);
+   if ( $labelType eq "mono" ) {
+      $mlfFile = "$mlf{'mon'}";
+   }
+   else {
+      $mlfFile = "$mlf{'ful'}";
+   }
+
+   shell("$HSMMAlign -I $mlfFile -S $scp{'trn'} -H $modelDirIn/cmp.mmf -N $modelDirIn/dur.mmf -m $dirOut $modelDirIn/mlist_cmp.lst $modelDirIn/mlist_dur.lst");
+}
+
+sub eval_mono($$$) {
+   my ( $modelDirIn, $evalCmpScpFile, $tag ) = @_;
+   my ($dirOut);
+
+   print_time("computing test set log probability ($tag)");
+
+   $dirOut = "$modelDirIn-eval";
+   mkdir "$dirOut", 0755;
+
+   if (-s $evalCmpScpFile) {
+      shell("$HERest{'tst'} -I $mlf{'mon'} -S $evalCmpScpFile -H $modelDirIn/cmp.mmf -N $modelDirIn/dur.mmf -M /dev/null -R /dev/null $modelDirIn/mlist_cmp.lst $modelDirIn/mlist_dur.lst");
+   }
+   else {
+      print("(skipping since specified corpus is empty)\n\n");
+   }
+
+   # FIXME : write summary of TSLP to a file
+
+   print_time("forced alignment on test corpus ($tag)");
+
+   mkdir "$dirOut/fal", 0755;
+
+   shell("$HSMMAlign -I $mlf{'mon'} -S $evalCmpScpFile -H $modelDirIn/cmp.mmf -N $modelDirIn/dur.mmf -m $dirOut/fal $modelDirIn/mlist_cmp.lst $modelDirIn/mlist_dur.lst");
+}
+
+sub eval_full($$$$) {
+   my ( $modelDirIn, $evalMListFile, $evalCmpScpFile, $tag ) = @_;
+   my ( $dirOut, $set, $edFile );
+
+   $dirOut = "$modelDirIn-eval";
+   mkdir "$dirOut", 0755;
+   mkdir "$dirOut/_all", 0755;
+
+   print_time("making unseen models ($tag)");
+
+   foreach $set (@SET) {
+      $edFile = "$dirOut/_all/mkunseen_$set.hed";
+      make_edfile_mkunseen( $modelDirIn, $evalMListFile, $set, $edFile, "$dirOut/_all/mlist_$set.lst" );
+      shell("$HHEd{'trn'} -T 1 -H $modelDirIn/$set.mmf -w $dirOut/_all/$set.mmf $edFile $modelDirIn/mlist_$set.lst");
+   }
+
+   print_time("computing log probability ($tag)");
+
+   if (-s $evalCmpScpFile) {
+      shell("$HERest{'tst'} -I $mlf{'ful'} -S $evalCmpScpFile -H $dirOut/_all/cmp.mmf -N $dirOut/_all/dur.mmf -M /dev/null -R /dev/null $dirOut/_all/mlist_cmp.lst $dirOut/_all/mlist_dur.lst");
+   }
+   else {
+      print("(skipping since specified corpus is empty)\n\n");
+   }
+
+   # FIXME : write summary of TSLP to a file
+
+   print_time("forced alignment on test corpus ($tag)");
+
+   mkdir "$dirOut/fal", 0755;
+
+   shell("$HSMMAlign -I $mlf{'ful'} -S $evalCmpScpFile -H $dirOut/_all/cmp.mmf -N $dirOut/_all/dur.mmf -m $dirOut/fal $dirOut/_all/mlist_cmp.lst $dirOut/_all/mlist_dur.lst");
+
+   # FIXME : remove _all directory
+}
+
+sub full_synth($$$$$$) {
+   my ( $modelDirIn, $genMListFile, $genLabScpFile, $genMethod, $genType, $tag ) = @_;
+   my ( $dirOut, $set, $edFile, $synthDirOut );
+
+   $dirOut = "$modelDirIn-synth";
+   mkdir "$dirOut", 0755;
+   mkdir "$dirOut/_all", 0755;
+
+   print_time("making unseen models ($tag)");
+
+   foreach $set (@SET) {
+      $edFile = "$dirOut/_all/mkunseen_$set.hed";
+      make_edfile_mkunseen( $modelDirIn, $genMListFile, $set, $edFile, "$dirOut/_all/mlist_$set.lst" );
+      shell("$HHEd{'trn'} -T 1 -H $modelDirIn/$set.mmf -w $dirOut/_all/$set.mmf $edFile $modelDirIn/mlist_$set.lst");
+   }
+
+   # FIXME : actually use genMethod, and add more possible generation methods
+   $synthDirOut = "$dirOut/$genMethod-c$genType";
+   mkdir "$synthDirOut", 0755;
+
+   print_time("generating speech parameter sequences ($tag)");
+
+   # generate parameter
+   shell("$HMGenS -S $genLabScpFile -c $genType -H $dirOut/_all/cmp.mmf -N $dirOut/_all/dur.mmf -M $synthDirOut $dirOut/_all/mlist_cmp.lst $dirOut/_all/mlist_dur.lst");
+
+   # FIXME : remove _all directory
+
+   print_time("synthesizing waveforms ($tag)");
+
+   # (FIXME : useMSPF should be part of gen type)
+
+   # FIXME : allow different types of gen / postfiltering
+   gen_wave( $synthDirOut, 0, "" );
 }
 
 ##################################################################################################
