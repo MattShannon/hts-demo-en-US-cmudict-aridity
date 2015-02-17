@@ -171,6 +171,9 @@ sub run_expt {
       $gvCurrDir = $gvGlobalDir;
    }
 
+   # generate and synthesize (HMGenS, SPTK / STRAIGHT)
+   synthesize( $monoDir, $lst{'mon'}, "$datdir/scp/gen-mono.scp", "gv", $pgtype, $gvCurrDir, "monophone" );
+
    # HERest (computing test set log probability (monophone))
    eval_model( $monoDir, "", "$datdir/scp/test.scp", "monophone" );
 

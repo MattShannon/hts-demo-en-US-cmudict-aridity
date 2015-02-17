@@ -377,6 +377,13 @@ scp: corpus-train.lst corpus-test.lst corpus-gen.lst
 		echo "`pwd -P`"/cmp/$$uttId.cmp >> scp/test.scp; \
 	done
 
+	# Generating a generation monophone label script
+	rm -f scp/gen-mono.scp
+	touch scp/gen-mono.scp
+	cat corpus-gen.lst | while read uttId; do \
+		echo "`pwd -P`"/labels/mono/$$uttId.lab >> scp/gen-mono.scp; \
+	done
+
 	# Generating a generation fullcontext label script
 	rm -f scp/gen.scp
 	touch scp/gen.scp
