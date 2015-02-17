@@ -22,14 +22,4 @@ data/labels/full.mlf
 data/lists
 data/scp
 
-models
-stats
-edfiles
-trees
-fal
-gv
-mspf
-voices
-gen
-proto
-configs
+expt

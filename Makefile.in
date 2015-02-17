@@ -63,7 +63,7 @@ clean-data:
 
 .PHONY: clean-voice
 clean-voice:
-	rm -rf models stats edfiles trees fal gv mspf voices gen proto configs
+	rm -rf expt
 
 .PHONY: distclean
 distclean: clean

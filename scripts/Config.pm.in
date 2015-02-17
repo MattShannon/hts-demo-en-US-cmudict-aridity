@@ -225,45 +225,4 @@ $IFFTR        = '@IFFTR@';
 $MATLAB   = '@MATLAB@';
 $STRAIGHT = '@STRAIGHT@';
 
-
-# Switch ================================
-$MKEMV = 1; # preparing environments
-$HCMPV = 1; # computing a global variance
-$IN_RE = 1; # initialization & reestimation
-$MMMMF = 1; # making a monophone mmf
-$ERST0 = 1; # embedded reestimation (monophone)
-$LTST0 = 1; # computing test set log probability (monophone)
-$FAL0  = 1; # forced alignment (monophone)
-$MN2FL = 1; # copying monophone mmf to fullcontext one
-$ERST1 = 1; # embedded reestimation (fullcontext)
-$CXCL1 = 1; # tree-based context clustering
-$ERST2 = 1; # embedded reestimation (clustered)
-$UNTIE = 1; # untying the parameter sharing structure
-$ERST3 = 1; # embedded reestimation (untied)
-$CXCL2 = 1; # tree-based context clustering
-$ERST4 = 1; # embedded reestimation (re-clustered)
-$MCDGV = 1; # making global variance
-$MKUNG = 1; # making unseen models (GV)
-$TMSPF = 1; # training modulation spectrum-based postfilter
-$MKUN1 = 1; # making unseen models (1mix)
-$PGEN1 = 1; # generating speech parameter sequences (1mix)
-$WGEN1 = 1; # synthesizing waveforms (1mix)
-$LTST1 = 1; # computing test set log probability (1mix)
-$FAL1  = 1; # forced alignment (1mix)
-$CONVM = 1; # converting mmfs to the hts_engine file format
-$ENGIN = 1; # synthesizing waveforms using hts_engine
-$SEMIT = 1; # semi-tied covariance matrices
-$MKUNS = 1; # making unseen models (stc)
-$PGENS = 1; # generating speech parameter sequences (stc)
-$WGENS = 1; # synthesizing waveforms (stc)
-$LTSTS = 1; # computing test set log probability (stc)
-$FALS  = 0; # forced alignment (stc)
-$UPMIX = 1; # increasing the number of mixture components (1mix -> 2mix)
-$ERST5 = 1; # embedded reestimation (2mix)
-$MKUN2 = 1; # making unseen models (2mix)
-$PGEN2 = 1; # generating speech parameter sequences (2mix)
-$WGEN2 = 1; # synthesizing waveforms (2mix)
-$LTST2 = 1; # computing test set log probability (2mix)
-$FAL2  = 1; # forced alignment (2mix)
-
 1;
